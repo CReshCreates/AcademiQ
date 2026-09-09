@@ -1,0 +1,69 @@
+.dashboard {
+  min-height: 100vh;
+  background: #fdfcfb;
+}
+.dashboard header {
+  display: flex;
+  align-items: center;
+  min-height: 81px;
+  padding: 13px 36px;
+  border-bottom: 1px solid #e9e6eb;
+}
+.star {
+  width: 27px;
+  height: 27px;
+  margin-left: 4px;
+  transform: translateY(5px);
+}
+.title-right {
+  display: flex;
+  margin-left: auto;
+}
+.title-left h2 {
+  color: #25243a;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.title-left span {
+  display: block;
+  margin-bottom: 2px;
+  color: #777291;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.35px;
+}
+.dashboard .notification {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-left: 0;
+  border: 1px solid #e4e1e9;
+  border-radius: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.dashboard .notification img {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+}
+
+.dashboard .profile {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-left: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #7258ef;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}

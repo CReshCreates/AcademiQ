@@ -1,0 +1,26 @@
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .main-content {
+    transition: filter 220ms ease, opacity 220ms ease;
+  }
+
+  .sidebar.menu-open ~ .main-content {
+    filter: blur(5px);
+    opacity: 0.72;
+    pointer-events: none;
+    user-select: none;
+  }
+}

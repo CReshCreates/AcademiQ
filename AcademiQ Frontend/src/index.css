@@ -1,0 +1,79 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600&display=swap");
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-width: 320px;
+  background: #fdfcfb;
+  color: #202139;
+  font-family: "DM Sans", Arial, sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.title-right {
+  display: flex;
+  margin-left: auto;
+}
+.title-left h2 {
+  color: #25243a;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 28px;
+}
+.title-left span {
+  display: block;
+  margin-bottom: 2px;
+  color: #777291;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.35px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  min-height: 81px;
+  padding: 13px 36px;
+  border-bottom: 1px solid #e9e6eb;
+}
+
+.notification-logo {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-left: 0;
+  border: 1px solid #e4e1e9;
+  border-radius: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.notification-logo img {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+}
+
+.profile-logo {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-left: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #7258ef;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
