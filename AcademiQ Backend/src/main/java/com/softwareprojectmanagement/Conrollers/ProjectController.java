@@ -1,14 +1,16 @@
 package com.softwareprojectmanagement.Conrollers;
 
+import com.softwareprojectmanagement.DTO.Request.ProjectCreationRequest;
+import com.softwareprojectmanagement.DTO.Response.Project.AvailableSubjectsForProjectCreation;
+import com.softwareprojectmanagement.DTO.Response.Project.AvailableSupervisor;
+import com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse;
 import com.softwareprojectmanagement.Models.Subject;
 import com.softwareprojectmanagement.Services.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,8 +21,18 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping("/getSubjects")
-    public ResponseEntity<List<Subject>> getSubjects(Authentication authentication) {
-        List<Subject> subjects = projectService.getSubjects(authentication.getName());
+    public ResponseEntity<List<AvailableSubjectsForProjectCreation>> getSubjects(Authentication authentication) {
+        List<AvailableSubjectsForProjectCreation> subjects = projectService.getSubjects(authentication.getName());
         return ResponseEntity.status(HttpStatus.OK).body(subjects);
+    }
+
+    @GetMapping("/getSupervisor/{programmeSubjectId}")
+    public ResponseEntity<List<AvailableSupervisor>> getSupervisor(@PathVariable Integer programmeSubjectId) {
+        return ResponseEntity.ok().body(projectService.getSupervisors(programmeSubjectId));
+    }
+
+    @PostMapping("/createProject")
+    public ResponseEntity<CreatedProjectResponse> createNewProject(@RequestBody ProjectCreationRequest projectCreationRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.getCreatedProject(projectCreationRequest));
     }
 }
