@@ -1,6 +1,7 @@
 package com.softwareprojectmanagement.Services;
 
 
+import com.softwareprojectmanagement.DTO.Response.Registration.AvailableBatches;
 import com.softwareprojectmanagement.Exceptions.NoActiveBatchException;
 import com.softwareprojectmanagement.Models.Batch;
 import com.softwareprojectmanagement.Repository.BatchRepository;
@@ -14,8 +15,8 @@ import java.util.List;
 public class BatchService {
     private final BatchRepository batchRepository;
 
-    public List<Batch> activeBatch(){
-        List<Batch> batchList = batchRepository.findAllByStatus("ACTIVE");
+    public List<AvailableBatches> activeBatch(){
+        List<AvailableBatches> batchList = batchRepository.findAllByStatus("ACTIVE");
 
         if(batchList.isEmpty()){
             throw new NoActiveBatchException("There are no active batches currently!!!");

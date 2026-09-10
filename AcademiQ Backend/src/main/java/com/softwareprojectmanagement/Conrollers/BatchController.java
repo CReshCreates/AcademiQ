@@ -1,6 +1,7 @@
 
 package com.softwareprojectmanagement.Conrollers;
 
+import com.softwareprojectmanagement.DTO.Response.Registration.AvailableBatches;
 import com.softwareprojectmanagement.Models.Batch;
 import com.softwareprojectmanagement.Services.BatchService;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,8 @@ import java.util.List;
 public class BatchController {
     private final BatchService batchService;
 
-    @GetMapping
-    public ResponseEntity<List<Batch>> getAllActiveBatches(){
+    @GetMapping("/getAvailableBatches")
+    public ResponseEntity<List<AvailableBatches>> getAllActiveBatches(){
         return ResponseEntity.status(HttpStatus.OK).body(batchService.activeBatch());
     }
 }
