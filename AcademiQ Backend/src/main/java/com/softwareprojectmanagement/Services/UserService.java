@@ -7,9 +7,11 @@ import com.softwareprojectmanagement.Exceptions.AuthenticationFailedException;
 import com.softwareprojectmanagement.Exceptions.EmailAlreadyExistsException;
 import com.softwareprojectmanagement.Exceptions.SectionNotCurrentlyAvailableException;
 import com.softwareprojectmanagement.Models.MyUserDetails;
+import com.softwareprojectmanagement.Models.Programme;
 import com.softwareprojectmanagement.Models.Section;
 import com.softwareprojectmanagement.Models.User;
 import com.softwareprojectmanagement.Repository.BatchRepository;
+import com.softwareprojectmanagement.Repository.ProgrammeRepository;
 import com.softwareprojectmanagement.Repository.SectionRepository;
 import com.softwareprojectmanagement.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -26,7 +30,7 @@ public class UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final SectionRepository sectionRepository;
-    private final BatchRepository batchRepository;
+    private final ProgrammeRepository programmeRepository;
 
 
     public String registration(RegistrationRequest registrationRequest) {
@@ -35,8 +39,9 @@ public class UserService {
             throw new EmailAlreadyExistsException("User with this email is already registered!");
         }
 
-        Section section = sectionRepository.findIdByName(registrationRequest.getSection(), registrationRequest.getBatch() + " Batch");
+        Section section = sectionRepository.findIdByName(registrationRequest.getSection(), registrationRequest.getBatchName());
 
+        Programme programme = programmeRepository.findProgrammeById(registrationRequest.getProgrammeId());
 
         if(section == null){
             throw new SectionNotCurrentlyAvailableException("There are no sections currently.");
@@ -49,6 +54,7 @@ public class UserService {
         user.setRole("STUDENT");
 
         user.setSection(section);
+        user.setProgramme(programme);
 
         return userRepository.save(user).getEmail();
     }

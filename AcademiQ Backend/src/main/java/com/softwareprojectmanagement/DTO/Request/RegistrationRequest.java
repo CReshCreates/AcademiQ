@@ -24,6 +24,9 @@ public class RegistrationRequest {
     @NotBlank(message="Section is required!")
     private String section;
 
-    @NotNull(message="Batch is required!")
-    private Integer batch;
+    @NotBlank(message="Batch is required!")
+    private String batchName;
+
+    @NotNull(message="Programme is required!")
+    private Integer programmeId;
 }
