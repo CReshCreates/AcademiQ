@@ -21,19 +21,20 @@ import java.util.List;
 public class ProjectController {
     private final ProjectService projectService;
 
-    @GetMapping("/getSubjects")
+    @GetMapping("students/getSubjects")
     public ResponseEntity<List<AvailableSubjectsForProjectCreation>> getSubjects(Authentication authentication) {
         List<AvailableSubjectsForProjectCreation> subjects = projectService.getSubjects(authentication.getName());
         return ResponseEntity.status(HttpStatus.OK).body(subjects);
     }
 
-    @GetMapping("/getSupervisor/{programmeSubjectId}")
+    @GetMapping("students/getSupervisor/{programmeSubjectId}")
     public ResponseEntity<List<AvailableSupervisor>> getSupervisor(@PathVariable Integer programmeSubjectId) {
         return ResponseEntity.ok().body(projectService.getSupervisors(programmeSubjectId));
     }
 
-    @PostMapping(value="/createProject", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value="students/createProject", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CreatedProjectResponse> createNewProject(@ModelAttribute ProjectCreationRequest projectCreationRequest){
         return ResponseEntity.status(HttpStatus.CREATED).body(projectService.getCreatedProject(projectCreationRequest));
     }
+
 }
