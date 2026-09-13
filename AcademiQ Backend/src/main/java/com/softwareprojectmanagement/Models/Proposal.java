@@ -26,11 +26,9 @@ public class Proposal {
     @Column(name="status")
     String status;
 
-    @NotNull
     @Column(name="pdf_url")
     String pdfUrl;
 
-    @NotNull
     @Column(name="feedback")
     String feedback;
 
@@ -38,9 +36,12 @@ public class Proposal {
     @Column(name="submitted_at")
     LocalDateTime submittedAt;
 
-    @NotNull
     @Column(name="reviewed_at")
     LocalDateTime reviewedAt;
+
+    @NotNull
+    @Column(name="version")
+    Integer version;
 
     @ManyToOne
     @JoinColumn(name="project_id")

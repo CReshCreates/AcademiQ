@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AvailableSupervisor {
 
-    private Integer supervisorId;
+    private Integer subjectSupervisorId;
     private String supervisorName;
+    private Integer supervisorId;
 
 }

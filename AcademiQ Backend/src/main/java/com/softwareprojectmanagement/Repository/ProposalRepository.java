@@ -1,4 +1,7 @@
 package com.softwareprojectmanagement.Repository;
 
-public interface ProposalRepository {
+import com.softwareprojectmanagement.Models.Proposal;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProposalRepository extends JpaRepository<Proposal, Integer> {
 }

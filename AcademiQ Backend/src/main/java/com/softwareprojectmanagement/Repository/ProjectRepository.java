@@ -13,8 +13,19 @@ import org.springframework.stereotype.Repository;
 public interface ProjectRepository extends JpaRepository<Project, Integer> {
 
     @Query("""
-    SELECT new com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse(p.project_id, p.title, p.subjectSupervisor.user.fullName, p.programmeSubject.semester.semesterName, p.programmeSubject.subject.name, 0, "Proposal")
-    FROM Project p WHERE p.project_id = :projectId
+    SELECT new com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse(
+        p.project_id,
+        p.title,
+        p.supervisor.fullName,
+        p.programmeSubject.semester.semesterName,
+        p.programmeSubject.subject.name,
+        0,
+        'Proposal'
+    )
+    FROM Project p
+    WHERE p.project_id = :projectId
 """)
-    CreatedProjectResponse getCreatedProject(@Param("projectId") Integer projectId);
+    CreatedProjectResponse getCreatedProject(
+            @Param("projectId") Integer projectId
+    );
 }

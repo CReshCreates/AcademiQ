@@ -8,6 +8,7 @@ import com.softwareprojectmanagement.Models.Subject;
 import com.softwareprojectmanagement.Services.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -31,8 +32,8 @@ public class ProjectController {
         return ResponseEntity.ok().body(projectService.getSupervisors(programmeSubjectId));
     }
 
-    @PostMapping("/createProject")
-    public ResponseEntity<CreatedProjectResponse> createNewProject(@RequestBody ProjectCreationRequest projectCreationRequest){
+    @PostMapping(value="/createProject", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CreatedProjectResponse> createNewProject(@ModelAttribute ProjectCreationRequest projectCreationRequest){
         return ResponseEntity.status(HttpStatus.CREATED).body(projectService.getCreatedProject(projectCreationRequest));
     }
 }

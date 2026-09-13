@@ -18,7 +18,7 @@ public interface BatchRepository extends JpaRepository<Batch, Integer> {
         )
         FROM Batch b WHERE b.status =:status
     """)
-    List<AvailableBatches> findAllByStatus(@Param("status") String status);
+    List<Batch> findAllByStatus(@Param("status") String status);
 
     @Query("""
         SELECT b.batchId FROM Batch b WHERE b.batchName = :name

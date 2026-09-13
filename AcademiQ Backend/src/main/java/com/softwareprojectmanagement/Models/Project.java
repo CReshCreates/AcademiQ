@@ -66,5 +66,5 @@ public class Project {
 
     @ManyToOne
     @JoinColumn(name="supervisor_id")
-    private SubjectSupervisor subjectSupervisor;
+    private User supervisor;
 }

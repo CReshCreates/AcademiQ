@@ -1,4 +1,7 @@
 package com.softwareprojectmanagement.Repository;
 
-public interface MilestoneRepository {
+import com.softwareprojectmanagement.Models.Milestone;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MilestoneRepository extends JpaRepository<Milestone, Integer> {
 }

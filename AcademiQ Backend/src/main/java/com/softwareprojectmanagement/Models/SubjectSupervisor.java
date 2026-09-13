@@ -25,7 +25,4 @@ public class SubjectSupervisor {
     @ManyToOne
     @JoinColumn(name="supervisor_id")
     private User user;
-
-    @OneToMany(mappedBy = "subjectSupervisor")
-    private List<Project> projects;
 }

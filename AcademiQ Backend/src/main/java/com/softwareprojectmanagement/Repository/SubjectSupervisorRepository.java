@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface SubjectSupervisorRepository extends JpaRepository<SubjectSupervisor,Integer> {
 
     @Query("""
-    SELECT new com.softwareprojectmanagement.DTO.Response.Project.AvailableSupervisor(s.subjectSupervisorId, s.user.fullName)
+    SELECT new com.softwareprojectmanagement.DTO.Response.Project.AvailableSupervisor(s.subjectSupervisorId, s.user.fullName, s.user.userId)
     FROM SubjectSupervisor s 
     WHERE s.programmeSubject.programmeSubjectId = :programmeSubjectId
 """)
