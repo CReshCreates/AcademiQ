@@ -1,6 +1,7 @@
 package com.softwareprojectmanagement.Models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,6 +31,14 @@ public class Submission {
     @NotNull
     @Column(name="status")
     private String status;
+
+    @NotNull
+    @Column(name="file_name")
+    private String fileName;
+
+    @NotNull
+    @Column(name="submission_version")
+    private Integer submissionVersion;
 
     @ManyToOne
     @JoinColumn(name="milestone_id")
