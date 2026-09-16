@@ -13,37 +13,36 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="milestones")
+@Table(name = "milestones")
 public class Milestone {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name="milestone_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "milestone_id")
     private Integer milestoneId;
 
     @NotNull
-    @Column(name="title")
+    @Column(name = "title")
     private String title;
 
-    @NotNull
-    @Column(name="description")
+    @Column(name = "description")
     private String description;
 
-    @NotNull
-    @Column(name="deadline")
+    @Column(name = "deadline")
     private LocalDate deadline;
 
     @NotNull
-    @Column(name="status")
+    @Column(name = "status")
     private String status;
 
     @NotNull
-    @Column(name="progress")
+    @Column(name = "progress")
     private Integer progress;
 
     @OneToMany(mappedBy = "milestone")
     private List<Submission> submission;
 
     @ManyToOne
-    @JoinColumn(name="project_id")
+    @JoinColumn(name = "project_id")
     private Project project;
 }

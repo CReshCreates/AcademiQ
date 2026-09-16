@@ -1,7 +1,7 @@
 package com.softwareprojectmanagement.Conrollers;
 
-import com.softwareprojectmanagement.DTO.Request.LoginRequest;
-import com.softwareprojectmanagement.DTO.Request.RegistrationRequest;
+import com.softwareprojectmanagement.DTO.Request.LoginAndRegistration.LoginRequest;
+import com.softwareprojectmanagement.DTO.Request.LoginAndRegistration.RegistrationRequest;
 import com.softwareprojectmanagement.DTO.Response.LoginResponse;
 import com.softwareprojectmanagement.Services.UserService;
 import jakarta.validation.Valid;

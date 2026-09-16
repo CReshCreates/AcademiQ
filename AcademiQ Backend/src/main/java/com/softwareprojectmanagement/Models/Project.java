@@ -36,12 +36,6 @@ public class Project {
     private LocalDateTime created_at;
 
     @OneToMany(mappedBy = "project")
-    private List<Task> tasks;
-
-    @OneToMany(mappedBy="project")
-    private List<Proposal> proposals;
-
-    @OneToMany(mappedBy = "project")
     private List<ProjectMember> projectMember;
 
     @OneToMany(mappedBy = "project")

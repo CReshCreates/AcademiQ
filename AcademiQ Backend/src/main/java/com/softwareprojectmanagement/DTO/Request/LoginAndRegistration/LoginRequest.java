@@ -1,4 +1,4 @@
-package com.softwareprojectmanagement.DTO.Request;
+package com.softwareprojectmanagement.DTO.Request.LoginAndRegistration;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
