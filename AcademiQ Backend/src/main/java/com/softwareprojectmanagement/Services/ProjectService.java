@@ -1,20 +1,27 @@
 package com.softwareprojectmanagement.Services;
 
-import com.softwareprojectmanagement.DTO.Response.Project.AvailableSubjectsForProjectCreation;
-import com.softwareprojectmanagement.DTO.Response.Project.AvailableSupervisor;
-import com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse;
-import com.softwareprojectmanagement.DTO.Request.ProjectCreationRequest;
+import com.softwareprojectmanagement.DTO.Response.Project.*;
+import com.softwareprojectmanagement.DTO.Request.Project.ProjectCreationRequest;
+import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionPdfResponse;
+import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionQueueResponse;
 import com.softwareprojectmanagement.Exceptions.NoAssignedSupervisorException;
+import com.softwareprojectmanagement.Exceptions.NoSubmissionException;
 import com.softwareprojectmanagement.Exceptions.SubjectNotFoundException;
 import com.softwareprojectmanagement.Models.*;
 import com.softwareprojectmanagement.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -31,8 +38,8 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectActivitiesRepository projectActivitiesRepository;
     private final FileStorageService fileStorageService;
-    private final ProposalRepository proposalRepository;
     private final MilestoneRepository milestoneRepository;
+    private final SubmissionRepository submissionRepository;
 
     public List<AvailableSubjectsForProjectCreation> getSubjects(String email){
         User user = userRepository.findByEmail(email);
@@ -67,6 +74,8 @@ public class ProjectService {
 
     @Transactional
     public CreatedProjectResponse getCreatedProject(ProjectCreationRequest projectCreationRequest){
+
+        String proposedPdfUrl = fileStorageService.storeProposalPdf(projectCreationRequest.getUploadFile());
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         User user = userRepository.findByEmail(authentication.getName());
@@ -89,7 +98,6 @@ public class ProjectService {
                                 )
                         );
 
-
         Project createdProject = new Project();
 
         createdProject.setTitle(projectCreationRequest.getProjectTitle());
@@ -108,26 +116,13 @@ public class ProjectService {
         createdProjectMember.setJoinedAt(LocalDateTime.now());
         projectMemberRepository.save(createdProjectMember);
 
-        Proposal proposal = new Proposal();
-        proposal.setTitle(projectCreationRequest.getProjectTitle());
-        proposal.setDescription(projectCreationRequest.getProjectDescription());
-        proposal.setStatus("PENDING");
-        proposal.setPdfUrl(fileStorageService.storeProposalPdf(projectCreationRequest.getUploadFile()));
-        proposal.setFeedback(null);
-        proposal.setSubmittedAt(LocalDateTime.now());
-        proposal.setReviewedAt(null);
-        proposal.setVersion(1);
-        proposal.setProject(createdProject);
-        proposal.setProjectMember(createdProjectMember);
-        proposalRepository.save(proposal);
-
         Milestone projectProposal = new Milestone();
         projectProposal.setProject(createdProject);
         projectProposal.setTitle("Project Proposal");
         projectProposal.setDescription("Initial project proposal and supervisor approval.");
         projectProposal.setStatus("PENDING");
         projectProposal.setProgress(0);
-        milestoneRepository.save(projectProposal);
+        Milestone savedMilestone = milestoneRepository.save(projectProposal);
 
         Milestone requirements = new Milestone();
         requirements.setProject(createdProject);
@@ -169,6 +164,16 @@ public class ProjectService {
         finalSubmission.setProgress(0);
         milestoneRepository.save(finalSubmission);
 
+        Submission submission = new Submission();
+        submission.setProjectMember(createdProjectMember);
+        submission.setFileUrl(proposedPdfUrl);
+        submission.setSubmittedAt(LocalDateTime.now());
+        submission.setStatus("PENDING");
+        submission.setMilestone(savedMilestone);
+        submission.setFileName(projectCreationRequest.getUploadFile().getOriginalFilename());
+        submission.setSubmissionVersion(1);
+        submissionRepository.save(submission);
+
         ProjectActivities projectActivities = new ProjectActivities();
         projectActivities.setProject(createdProject);
         projectActivities.setUser(user);
@@ -179,5 +184,4 @@ public class ProjectService {
 
         return projectRepository.getCreatedProject(createdProject.getProject_id());
     }
-
 }

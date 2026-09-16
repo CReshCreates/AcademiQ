@@ -1,10 +1,7 @@
 package com.softwareprojectmanagement.Conrollers;
 
-import com.softwareprojectmanagement.DTO.Request.ProjectCreationRequest;
-import com.softwareprojectmanagement.DTO.Response.Project.AvailableSubjectsForProjectCreation;
-import com.softwareprojectmanagement.DTO.Response.Project.AvailableSupervisor;
-import com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse;
-import com.softwareprojectmanagement.Models.Subject;
+import com.softwareprojectmanagement.DTO.Request.Project.ProjectCreationRequest;
+import com.softwareprojectmanagement.DTO.Response.Project.*;
 import com.softwareprojectmanagement.Services.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
