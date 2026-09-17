@@ -175,4 +175,18 @@ public class ProjectService {
 
         return projectRepository.getCreatedProject(createdProject.getProject_id());
     }
+
+
+    public List<CreatedProjectResponse> getMyProjects(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        User user = userRepository.findByEmail(authentication.getName());
+
+        if(user == null){
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        return projectRepository.getMyProjects(user.getUserId());
+
+    }
 }
