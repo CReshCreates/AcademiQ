@@ -30,6 +30,7 @@ public class SubmissionService {
     private final CommentRepository commentRepository;
     private final ProjectActivitiesRepository projectActivitiesRepository;
     private final MilestoneRepository milestoneRepository;
+    private final ProjectRepository projectRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -111,6 +112,8 @@ public class SubmissionService {
         commentRepository.save(comment);
 
         Project project = savedSubmission.getMilestone().getProject();
+        project.setStatus("IN_PROGRESS");
+        projectRepository.save(project);
 
         ProjectActivities projectActivities = new ProjectActivities();
         projectActivities.setActivityType("PROPOSAL_APPROVED");
