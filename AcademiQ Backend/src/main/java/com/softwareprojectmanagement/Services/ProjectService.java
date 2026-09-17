@@ -2,26 +2,17 @@ package com.softwareprojectmanagement.Services;
 
 import com.softwareprojectmanagement.DTO.Response.Project.*;
 import com.softwareprojectmanagement.DTO.Request.Project.ProjectCreationRequest;
-import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionPdfResponse;
-import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionQueueResponse;
 import com.softwareprojectmanagement.Exceptions.NoAssignedSupervisorException;
-import com.softwareprojectmanagement.Exceptions.NoSubmissionException;
 import com.softwareprojectmanagement.Exceptions.SubjectNotFoundException;
 import com.softwareprojectmanagement.Models.*;
 import com.softwareprojectmanagement.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
