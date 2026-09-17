@@ -46,10 +46,9 @@ public class Task {
     @Column(name="created_at")
     private LocalDate createdAt;
 
-
     @ManyToOne
-    @JoinColumn(name = "project_id")
-    private Project project;
+    @JoinColumn(name = "milestone_id", nullable = false)
+    private Milestone milestone;
 
     @ManyToOne
     @JoinColumn(name="member_id")

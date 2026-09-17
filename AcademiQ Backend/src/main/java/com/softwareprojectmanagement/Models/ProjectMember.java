@@ -35,9 +35,6 @@ public class ProjectMember {
     @OneToMany(mappedBy = "projectMember")
     private List<Submission> submission;
 
-    @OneToMany(mappedBy = "projectMember")
-    private List<Proposal> proposal;
-
     @ManyToOne
     @JoinColumn(name="project_id")
     private Project project;

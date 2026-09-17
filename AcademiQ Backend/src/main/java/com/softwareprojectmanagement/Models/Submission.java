@@ -31,6 +31,14 @@ public class Submission {
     @Column(name="status")
     private String status;
 
+    @NotNull
+    @Column(name="file_name")
+    private String fileName;
+
+    @NotNull
+    @Column(name="submission_version")
+    private Integer submissionVersion;
+
     @ManyToOne
     @JoinColumn(name="milestone_id")
     private Milestone milestone;
