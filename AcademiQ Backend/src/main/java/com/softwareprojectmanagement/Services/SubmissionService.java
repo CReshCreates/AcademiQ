@@ -5,10 +5,7 @@ import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionPdfRespon
 import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionQueueResponse;
 import com.softwareprojectmanagement.Exceptions.NoSubmissionException;
 import com.softwareprojectmanagement.Models.*;
-import com.softwareprojectmanagement.Repository.CommentRepository;
-import com.softwareprojectmanagement.Repository.ProjectActivitiesRepository;
-import com.softwareprojectmanagement.Repository.SubmissionRepository;
-import com.softwareprojectmanagement.Repository.UserRepository;
+import com.softwareprojectmanagement.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +29,7 @@ public class SubmissionService {
     private final SubmissionRepository submissionRepository;
     private final CommentRepository commentRepository;
     private final ProjectActivitiesRepository projectActivitiesRepository;
+    private final MilestoneRepository milestoneRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -96,6 +94,12 @@ public class SubmissionService {
 
         submission.setStatus("APPROVED");
         Submission savedSubmission = submissionRepository.save(submission);
+
+        Milestone milestone = savedSubmission.getMilestone();
+        System.out.println("Milestone ID: " + milestone.getMilestoneId());
+        milestone.setStatus("COMPLETED");
+        milestone.setProgress(100);
+        milestoneRepository.save(milestone);
 
         Comment comment = new Comment();
 

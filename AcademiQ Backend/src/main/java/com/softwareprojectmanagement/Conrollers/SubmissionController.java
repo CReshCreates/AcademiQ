@@ -42,4 +42,14 @@ public class SubmissionController {
     public ResponseEntity<String> approvedSubmission(@RequestBody SubmissionApprovalRequest approvalRequest){
         return ResponseEntity.status(HttpStatus.OK).body(submissionService.approveSubmission(approvalRequest));
     }
+
+    @PostMapping("/supervisors/rejectSubmission")
+    public ResponseEntity<String> rejectedSubmission(@RequestBody SubmissionApprovalRequest approvalRequest){
+        return ResponseEntity.status(HttpStatus.OK).body(submissionService.rejectSubmission(approvalRequest));
+    }
+
+    @PostMapping("/supervisors/requestChangesInSubmission")
+    public ResponseEntity<String> requestChangesInSubmission(@RequestBody SubmissionApprovalRequest approvalRequest){
+        return ResponseEntity.status(HttpStatus.OK).body(submissionService.submissionChangeRequest(approvalRequest));
+    }
 }

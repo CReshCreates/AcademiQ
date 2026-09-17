@@ -17,7 +17,7 @@ import java.util.List;
 @Table(name="submissions")
 public class Submission {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer submissionId;
 
     @NotNull
