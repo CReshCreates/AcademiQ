@@ -4,9 +4,11 @@ import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionQueueResp
 import com.softwareprojectmanagement.Models.Submission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Integer> {
     @Query("""
      SELECT new com.softwareprojectmanagement.DTO.Response.Submission.SubmissionQueueResponse
