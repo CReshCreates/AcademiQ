@@ -40,4 +40,9 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.OK).body(projectService.getMyProjects());
     }
 
+    @GetMapping("/students/getProjectDetails/{projectId}")
+    public ResponseEntity<MyProjectsPageInfo> getProjectDetails(@PathVariable Integer projectId){
+        return ResponseEntity.status(HttpStatus.OK).body(projectService.getMyProjectsPageInfo(projectId));
+    }
+
 }

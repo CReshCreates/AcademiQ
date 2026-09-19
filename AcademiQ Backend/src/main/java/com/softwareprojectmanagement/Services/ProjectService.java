@@ -189,4 +189,14 @@ public class ProjectService {
         return projectRepository.getMyProjects(user.getUserId());
 
     }
+
+    public MyProjectsPageInfo getMyProjectsPageInfo(Integer projectId){
+        ProjectKPICards kpiCards = projectRepository.getProjectKPICards(projectId);
+        List<TeamMembers> teamMembers= projectRepository.getTeamMembers(projectId);
+        MilestoneDeadlineCard milestoneDeadlineCard = milestoneRepository.getMilestoneDeadline(projectId);
+        FeedbackCard feedbackCard = projectActivitiesRepository.getFeedbackCard(projectId);
+        List<RecentActivitiesCard> recentActivities = projectActivitiesRepository.getRecentActivities(projectId);
+
+        return new MyProjectsPageInfo(kpiCards, teamMembers, milestoneDeadlineCard, feedbackCard, recentActivities);
+    }
 }
