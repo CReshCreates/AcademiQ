@@ -40,6 +40,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 
+    @ExceptionHandler(NoSuchProjectsException.class)
+    public ResponseEntity<String> handleProjectsNotFound(NoSuchProjectsException e){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(ProjectMembersCountExceededException.class)
+    public ResponseEntity<String> handleProjectMembersCount(ProjectMembersCountExceededException e){
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(e.getMessage());
+    }
+
+    @ExceptionHandler(NoInvitationFoundException.class)
+    public ResponseEntity<String> handleNoInvitationsFound(NoInvitationFoundException e){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleMethodArgumentNotValid(MethodArgumentNotValidException e){
         String message = e.getBindingResult()

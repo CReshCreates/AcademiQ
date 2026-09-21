@@ -41,4 +41,7 @@ public class Notification {
     @ManyToOne
     @JoinColumn(name="user_id")
     private User user;
+
+    @Column(name = "invitation_id")
+    private Integer invitationId;
 }

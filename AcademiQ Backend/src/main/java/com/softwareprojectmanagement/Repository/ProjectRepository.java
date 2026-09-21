@@ -22,6 +22,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
         p.supervisor.fullName,
         p.programmeSubject.semester.semesterName,
         p.programmeSubject.subject.name,
+        p.programmeSubject.subject.subjectId,
         0,
         'Proposal',
         p.created_at
@@ -40,6 +41,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
         p.supervisor.fullName,
         p.programmeSubject.semester.semesterName,
         p.programmeSubject.subject.name,
+        p.programmeSubject.subject.subjectId,
         CAST(COALESCE(ROUND(AVG(t.progress)), 0) AS INTEGER ),
         p.status,
         p.created_at
