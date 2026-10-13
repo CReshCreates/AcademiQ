@@ -11,12 +11,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -52,17 +55,99 @@ public class SubmissionService {
         return submissionQueue;
     }
 
-    public SubmissionPdfResponse getPdfNames(Integer submissionId) throws IOException {
 
-        Submission submission = submissionRepository.getPdfNameBySubmissionId(submissionId);
 
-        if(submission == null){
-            throw new NoSubmissionException("There is no submission with id: " + submissionId);
+    public SubmissionPdfResponse getPdfNames(
+            Integer submissionId
+    ) throws IOException {
+
+        // Identify the authenticated user.
+        Authentication authentication =
+                SecurityContextHolder.getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException(
+                    "Authentication is required."
+            );
         }
 
-        String relativePath = submission.getFileUrl()
-                .replaceFirst("^/uploads/", "");
+        User currentUser = userRepository
+                .findByEmail(authentication.getName());
 
+        if (currentUser == null) {
+            throw new UsernameNotFoundException(
+                    "Authenticated user not found."
+            );
+        }
+
+        // Restrict this endpoint to supervisors.
+        if (!"SUPERVISOR".equalsIgnoreCase(
+                currentUser.getRole()
+        )) {
+            throw new AccessDeniedException(
+                    "Only supervisors can access this endpoint."
+            );
+        }
+
+        // STEP 3: Retrieve the submission.
+        Submission submission = submissionRepository
+                .findById(submissionId)
+                .orElseThrow(() ->
+                        new NoSubmissionException(
+                                "Submission not found."
+                        )
+                );
+
+        // Verify the submission belongs
+        // to a valid project.
+        Milestone milestone = submission.getMilestone();
+
+        if (milestone == null
+                || milestone.getProject() == null) {
+            throw new IllegalStateException(
+                    "Submission is not linked to a valid project."
+            );
+        }
+
+        Project project = milestone.getProject();
+
+        // Check supervisor authorization.
+        User assignedSupervisor = project.getSupervisor();
+
+        if (assignedSupervisor == null
+                || !currentUser.getUserId().equals(
+                assignedSupervisor.getUserId()
+        )) {
+            throw new AccessDeniedException(
+                    "You are not authorized to access this submission."
+            );
+        }
+
+        // Validate the stored file reference.
+        String storedPath = submission.getFileUrl();
+
+        if (storedPath == null
+                || !storedPath.startsWith("/uploads/")) {
+            throw new AccessDeniedException(
+                    "Invalid submission file reference."
+            );
+        }
+
+        String relativePath =
+                storedPath.substring("/uploads/".length());
+
+        if (relativePath.isBlank()
+                || relativePath.contains("\\")
+                || relativePath.startsWith("/")) {
+            throw new AccessDeniedException(
+                    "Invalid submission file path."
+            );
+        }
+
+        // Resolve the file inside
+        // the configured upload directory.
         Path uploadPath = Paths.get(uploadDir)
                 .toAbsolutePath()
                 .normalize();
@@ -71,14 +156,95 @@ public class SubmissionService {
                 .resolve(relativePath)
                 .normalize();
 
-        Resource resource = new UrlResource(filePath.toUri());
-
-        if(!resource.exists() || !resource.isReadable()){
-            throw new NoSubmissionException("There is no pdf");
+        if (!filePath.startsWith(uploadPath)
+                || filePath.equals(uploadPath)) {
+            throw new AccessDeniedException(
+                    "File path is outside the upload directory."
+            );
         }
 
-        return new SubmissionPdfResponse(resource, submission.getFileName());
+        // Verify the file exists
+        // and is not itself a symbolic link.
+        if (!Files.isRegularFile(
+                filePath,
+                LinkOption.NOFOLLOW_LINKS
+        )) {
+            throw new NoSubmissionException(
+                    "Submission PDF not found."
+            );
+        }
+
+        // Resolve real filesystem paths
+        // to detect symbolic-link directory traversal.
+        Path realUploadPath = uploadPath.toRealPath();
+        Path realFilePath = filePath.toRealPath();
+
+        if (!realFilePath.startsWith(realUploadPath)) {
+            throw new AccessDeniedException(
+                    "Invalid submission file location."
+            );
+        }
+
+        // Return the protected file.
+        Resource resource = new UrlResource(
+                realFilePath.toUri()
+        );
+
+        if (!resource.isReadable()) {
+            throw new NoSubmissionException(
+                    "Submission PDF is not readable."
+            );
+        }
+
+        return new SubmissionPdfResponse(
+                resource,
+                submission.getFileName()
+        );
     }
+
+    // VERIFY SUPERVISOR REVIEW AUTHORIZATION
+
+    private void verifySupervisorCanReview(
+            User currentUser,
+            Submission submission
+    ) {
+
+        // Only supervisors can review submissions.
+        if (currentUser == null
+                || !"SUPERVISOR".equalsIgnoreCase(
+                currentUser.getRole()
+        )) {
+            throw new AccessDeniedException(
+                    "Only supervisors can review submissions."
+            );
+        }
+
+        // The submission must belong to a project.
+        Milestone milestone = submission.getMilestone();
+
+        if (milestone == null
+                || milestone.getProject() == null) {
+            throw new IllegalStateException(
+                    "Submission is not linked to a valid project."
+            );
+        }
+
+        Project project = milestone.getProject();
+
+        // Only the supervisor assigned to this project
+        // can approve, reject, or request changes.
+        User assignedSupervisor = project.getSupervisor();
+
+        if (assignedSupervisor == null
+                || !currentUser.getUserId().equals(
+                assignedSupervisor.getUserId()
+        )) {
+            throw new AccessDeniedException(
+                    "You are not authorized to review this submission."
+            );
+        }
+    }
+
 
     @Transactional
     public String approveSubmission(SubmissionApprovalRequest approvalRequest) {
@@ -91,6 +257,8 @@ public class SubmissionService {
         }
 
         Submission submission = submissionRepository.findById(approvalRequest.getSubmissionId()).orElseThrow(()->new NoSubmissionException("No Submission found!"));
+
+        verifySupervisorCanReview(user, submission);
 
         submission.setStatus("APPROVED");
         Submission savedSubmission = submissionRepository.save(submission);
@@ -136,6 +304,8 @@ public class SubmissionService {
 
         Submission submission = submissionRepository.findById(approvalRequest.getSubmissionId()).orElseThrow(()->new NoSubmissionException("No Submission found!"));
 
+        verifySupervisorCanReview(user, submission);
+
         submission.setStatus("REJECTED");
         Submission savedSubmission = submissionRepository.save(submission);
 
@@ -174,6 +344,8 @@ public class SubmissionService {
 
         Submission submission = submissionRepository.findById(approvalRequest.getSubmissionId()).orElseThrow(()->new NoSubmissionException("No Submission found!"));
 
+        verifySupervisorCanReview(user, submission);
+        
         submission.setStatus("CHANGES_REQUESTED");
         Submission savedSubmission = submissionRepository.save(submission);
 

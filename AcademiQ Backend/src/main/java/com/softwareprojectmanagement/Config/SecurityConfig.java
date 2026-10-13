@@ -33,6 +33,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/users/login", "/users/register").permitAll()
 
+                        // Block direct access to uploaded files
+                        .requestMatchers("/uploads", "/uploads/**").denyAll()
+
+                        // Allow CORS preflight requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
                         .anyRequest().authenticated()
                 )
 
