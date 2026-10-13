@@ -8,6 +8,7 @@ import com.softwareprojectmanagement.Models.*;
 import com.softwareprojectmanagement.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -65,17 +66,62 @@ public class ProjectService {
 
     @Transactional
     public CreatedProjectResponse getCreatedProject(ProjectCreationRequest projectCreationRequest){
-
-        String proposedPdfUrl = fileStorageService.storeProposalPdf(projectCreationRequest.getUploadFile());
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        User user = userRepository.findByEmail(authentication.getName());
+        User user = userRepository
+                .findByEmailForUpdate(authentication.getName())
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "Authenticated user not found."
+                        )
+                );
 
-        if(user == null){
-            throw new UsernameNotFoundException("User not found");
+
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new AccessDeniedException(
+                    "Only students are allowed to create academic projects."
+            );
         }
 
+
         ProgrammeSubject programmeSubject = programmeSubjectRepository.findByProgrammeSubjectId(projectCreationRequest.getProgrammeSubjectId()).orElseThrow(() -> new RuntimeException("Programme subject not found."));
+
+
+        if (user.getProgramme() == null
+                || user.getSection() == null
+                || user.getSection().getBatch() == null) {
+
+            throw new IllegalStateException(
+                    "Student academic profile is incomplete."
+            );
+        }
+
+        List<AvailableSubjectsForProjectCreation> eligibleSubjects =
+                getSubjects(user.getEmail());
+
+        boolean subjectIsEligible = eligibleSubjects.stream()
+                .anyMatch(subject ->
+                        subject.getProgrammeSubjectId()
+                                .equals(programmeSubject.getProgrammeSubjectId())
+                );
+
+        if (!subjectIsEligible) {
+            throw new IllegalStateException(
+                    "This subject is not available for your programme and current semester."
+            );
+        }
+
+        boolean alreadyParticipating =
+                projectMemberRepository.existsByUserAndSubject(
+                        user.getUserId(),
+                        programmeSubject.getSubject().getSubjectId()
+                );
+
+        if (alreadyParticipating) {
+            throw new IllegalStateException(
+                    "You are already participating in a project for this subject."
+            );
+        }
 
         SubjectSupervisor subjectSupervisor =
                 subjectSupervisorRepository
@@ -88,6 +134,10 @@ public class ProjectService {
                                         "Supervisor is not assigned to this subject."
                                 )
                         );
+
+        String proposedPdfUrl = fileStorageService.storeProposalPdf(
+                projectCreationRequest.getUploadFile()
+        );
 
         Project createdProject = new Project();
 
@@ -190,13 +240,86 @@ public class ProjectService {
 
     }
 
-    public MyProjectsPageInfo getMyProjectsPageInfo(Integer projectId){
-        ProjectKPICards kpiCards = projectRepository.getProjectKPICards(projectId);
-        List<TeamMembers> teamMembers= projectRepository.getTeamMembers(projectId);
-        MilestoneDeadlineCard milestoneDeadlineCard = milestoneRepository.getMilestoneDeadline(projectId);
-        FeedbackCard feedbackCard = projectActivitiesRepository.getFeedbackCard(projectId);
-        List<RecentActivitiesCard> recentActivities = projectActivitiesRepository.getRecentActivities(projectId);
 
-        return new MyProjectsPageInfo(kpiCards, teamMembers, milestoneDeadlineCard, feedbackCard, recentActivities);
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public MyProjectsPageInfo getMyProjectsPageInfo(Integer projectId) {
+
+        // 1. Get the authenticated user.
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException(
+                    "Authentication is required."
+            );
+        }
+
+        User user = userRepository.findByEmail(
+                authentication.getName()
+        );
+
+        if (user == null) {
+            throw new UsernameNotFoundException(
+                    "Authenticated user not found."
+            );
+        }
+
+        // 2. Check that the project exists.
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new com.softwareprojectmanagement.Exceptions
+                                .NoSuchProjectsException(
+                                "Project not found."
+                        )
+                );
+
+        // 3. Check project membership.
+        boolean isMember = project.getProjectMember()
+                .stream()
+                .anyMatch(member ->
+                        member.getUser().getUserId()
+                                .equals(user.getUserId())
+                );
+
+        // 4. Check whether the user is the assigned supervisor.
+        boolean isSupervisor =
+                "SUPERVISOR".equals(user.getRole())
+                        && project.getSupervisor() != null
+                        && project.getSupervisor().getUserId()
+                        .equals(user.getUserId());
+
+        // 5. Administrators have platform-wide access.
+        boolean isAdmin = "ADMIN".equals(user.getRole());
+
+        if (!isMember && !isSupervisor && !isAdmin) {
+            throw new AccessDeniedException(
+                    "You are not authorized to access this project."
+            );
+        }
+
+        // 6. Retrieve dashboard information after authorization.
+        ProjectKPICards kpiCards =
+                projectRepository.getProjectKPICards(projectId);
+
+        List<TeamMembers> teamMembers =
+                projectRepository.getTeamMembers(projectId);
+
+        MilestoneDeadlineCard milestoneDeadlineCard =
+                milestoneRepository.getMilestoneDeadline(projectId);
+
+        FeedbackCard feedbackCard =
+                projectActivitiesRepository.getFeedbackCard(projectId);
+
+        List<RecentActivitiesCard> recentActivities =
+                projectActivitiesRepository.getRecentActivities(projectId);
+
+        return new MyProjectsPageInfo(
+                kpiCards,
+                teamMembers,
+                milestoneDeadlineCard,
+                feedbackCard,
+                recentActivities
+        );
     }
 }

@@ -4,12 +4,15 @@ import com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse
 import com.softwareprojectmanagement.DTO.Response.Project.ProjectKPICards;
 import com.softwareprojectmanagement.DTO.Response.Project.TeamMembers;
 import com.softwareprojectmanagement.Models.Project;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Repository
@@ -84,12 +87,33 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
 """)
     ProjectKPICards getProjectKPICards(@Param("projectId") Integer projectId);
 
+
     @Query("""
-    SELECT pm.user.fullName AS fullName, pm.role AS role, COUNT(t) AS taskedAssignedNumber
+    SELECT
+        pm.user.fullName AS fullName,
+        pm.role AS role,
+        CAST(COUNT(t) AS integer) AS taskedAssignedNumber
     FROM ProjectMember pm
-    JOIN pm.task t
+    LEFT JOIN pm.task t
     WHERE pm.project.project_id = :projectId
-    GROUP BY pm.user.fullName, pm.role
-""")
-    List<TeamMembers> getTeamMembers(@Param("projectId") Integer projectId);
+    GROUP BY
+        pm.memberId,
+        pm.user.fullName,
+        pm.role
+    """)
+    List<TeamMembers> getTeamMembers(
+            @Param("projectId") Integer projectId
+    );
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT p
+    FROM Project p
+    WHERE p.project_id = :projectId
+    """)
+    Optional<Project> findByIdForUpdate(
+            @Param("projectId") Integer projectId
+    );
+
 }
