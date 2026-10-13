@@ -3,6 +3,7 @@ package com.softwareprojectmanagement.Services;
 
 import com.softwareprojectmanagement.DTO.Request.Task.TaskCreateRequest;
 import com.softwareprojectmanagement.DTO.Request.Task.TaskUpdateRequest;
+import com.softwareprojectmanagement.DTO.Response.Task.MyTaskResponse;
 import com.softwareprojectmanagement.DTO.Response.Task.TaskResponse;
 import com.softwareprojectmanagement.Models.*;
 import com.softwareprojectmanagement.Repository.*;
@@ -373,6 +374,16 @@ public class TaskService {
         }
 
         // STEP 6: Update only supplied fields.
+
+        if ("UNDER_REVIEW".equalsIgnoreCase(task.getStatus())
+                || "COMPLETED".equalsIgnoreCase(task.getStatus())) {
+
+            throw new IllegalStateException(
+                    "Tasks under review or completed "
+                            + "cannot be edited or reassigned."
+            );
+        }
+
         boolean updated = false;
 
         // Update task title.
@@ -479,6 +490,87 @@ public class TaskService {
         // STEP 10: Return updated task details.
         return mapToResponse(savedTask);
     }
+
+
+    // ==========================================
+    // GET MY ASSIGNED TASKS ACROSS ALL PROJECTS
+    // ==========================================
+
+    @Transactional
+    public List<MyTaskResponse> getMyAssignedTasks() {
+
+        // STEP 1: Identify the authenticated user.
+        Authentication authentication =
+                SecurityContextHolder.getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException(
+                    "Authentication is required."
+            );
+        }
+
+        // STEP 2: Retrieve the current student.
+        User currentUser = userRepository
+                .findByEmail(authentication.getName());
+
+        if (currentUser == null) {
+            throw new UsernameNotFoundException(
+                    "Authenticated user not found."
+            );
+        }
+
+        // STEP 3: Allow students only.
+        if (!"STUDENT".equalsIgnoreCase(
+                currentUser.getRole()
+        )) {
+            throw new AccessDeniedException(
+                    "Only students can view their assigned tasks."
+            );
+        }
+
+        // STEP 4: Retrieve tasks assigned to this user
+        // across all projects.
+        List<Task> tasks =
+                taskRepository.findAllTasksAssignedToUser(
+                        currentUser.getUserId()
+                );
+
+        // STEP 5: Convert entities into response DTOs.
+        return tasks.stream()
+                .map(this::mapToMyTaskResponse)
+                .toList();
+    }
+
+
+    // ==========================================
+    // MAP TASK TO MY TASK RESPONSE
+    // ==========================================
+
+    private MyTaskResponse mapToMyTaskResponse(
+            Task task
+    ) {
+
+        Milestone milestone = task.getMilestone();
+
+        Project project = milestone.getProject();
+
+        return new MyTaskResponse(
+                task.getTaskId(),
+                project.getProject_id(),
+                project.getTitle(),
+                milestone.getMilestoneId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getStatus(),
+                task.getPriority(),
+                task.getDeadline(),
+                task.getProgress()
+        );
+    }
+
+
 
 
     // CONVERT TASK ENTITY TO RESPONSE DTO

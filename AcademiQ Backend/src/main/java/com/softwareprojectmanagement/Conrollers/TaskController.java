@@ -85,7 +85,7 @@ public class TaskController {
 
         return ResponseEntity.ok(updatedTask);
     }
-    
+
     // DELETE TASK
 
     @DeleteMapping("/{taskId}")

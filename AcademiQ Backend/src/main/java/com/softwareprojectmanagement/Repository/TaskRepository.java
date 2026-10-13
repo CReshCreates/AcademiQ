@@ -2,17 +2,22 @@
 package com.softwareprojectmanagement.Repository;
 
 import com.softwareprojectmanagement.Models.Task;
+
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Integer> {
 
-    // Retrieve all tasks belonging to a specific project.
+    // GET TASKS BELONGING TO A PROJECT
     @Query("""
         SELECT t
         FROM Task t
@@ -24,7 +29,7 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
     );
 
 
-    // Retrieve all tasks under a specific milestone.
+    // GET TASKS UNDER A MILESTONE
     @Query("""
         SELECT t
         FROM Task t
@@ -35,8 +40,7 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
             @Param("milestoneId") Integer milestoneId
     );
 
-
-    // Retrieve tasks assigned to a specific project member.
+    // GET TASKS ASSIGNED TO A MEMBER
     @Query("""
         SELECT t
         FROM Task t
@@ -45,6 +49,29 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
         """)
     List<Task> findTasksByMemberId(
             @Param("memberId") Integer memberId
+    );
+
+    // LOCK TASK FOR SUBTASK MODIFICATIONS
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT t
+        FROM Task t
+        WHERE t.taskId = :taskId
+        """)
+    Optional<Task> findByIdForUpdate(
+            @Param("taskId") Integer taskId
+    );
+
+    @Query("""
+        SELECT t
+        FROM Task t
+        JOIN t.projectMember pm
+        JOIN pm.user u
+        WHERE u.userId = :userId
+        ORDER BY t.deadline ASC, t.taskId ASC
+        """)
+    List<Task> findAllTasksAssignedToUser(
+            @Param("userId") Integer userId
     );
 
 }
