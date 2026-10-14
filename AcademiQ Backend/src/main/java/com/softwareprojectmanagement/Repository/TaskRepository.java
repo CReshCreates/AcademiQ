@@ -74,4 +74,15 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
             @Param("userId") Integer userId
     );
 
+
+    // GET AVERAGE TASK PROGRESS FOR A PROJECT
+    @Query("""
+        SELECT AVG(t.progress)
+        FROM Task t
+        WHERE t.milestone.project.project_id = :projectId
+        """)
+    Double getAverageTaskProgressByProjectId(
+            @Param("projectId") Integer projectId
+    );
+
 }

@@ -13,26 +13,42 @@ import java.util.List;
 
 @Repository
 public interface ProjectActivitiesRepository extends JpaRepository<ProjectActivities, Integer> {
-    @Query("""
-    SELECT pa.user.fullName AS supervisorsFullname, m.title AS milestoneName, pa.description AS feedbackDescription, pa.createdAt AS activityCreatedTime
-    FROM ProjectActivities pa
-    JOIN pa.project p 
-    JOIN p.milestone m
-    WHERE pa.project.project_id = :projectId
-    AND pa.user.role = 'SUPERVISOR'
-    AND (pa.activityType = 'PROPOSAL_APPROVED' 
-    OR pa.activityType = 'PROPOSAL_REJECTED' 
-    OR pa.activityType = 'PROPOSAL_CHANGES_REQUESTED')
-    ORDER BY pa.createdAt DESC
-    LIMIT 1
-""")
-    FeedbackCard getFeedbackCard(@Param("projectId") Integer projectId);
 
+    // GET LATEST SUPERVISOR FEEDBACK
     @Query("""
-    SELECT pa.description AS activityDescription, pa.createdAt AS activityCreatedTime
-    FROM ProjectActivities pa
-    WHERE pa.project.project_id = :projectId
-    LIMIT 5
-""")
-    List<RecentActivitiesCard> getRecentActivities(@Param("projectId") Integer projectId);
+        SELECT
+            c.user.fullName AS supervisorsFullname,
+            m.title AS milestoneName,
+            c.content AS feedbackDescription,
+            c.createdAt AS activityCreatedTime
+        FROM Comment c
+        JOIN c.submission s
+        JOIN s.milestone m
+        JOIN m.project p
+        WHERE p.project_id = :projectId
+          AND p.supervisor IS NOT NULL
+          AND c.user.userId = p.supervisor.userId
+        ORDER BY c.createdAt DESC, c.commentId DESC
+        LIMIT 1
+        """)
+    FeedbackCard getFeedbackCard(
+            @Param("projectId") Integer projectId
+    );
+
+
+
+    // GET FIVE MOST RECENT PROJECT ACTIVITIES
+    @Query("""
+        SELECT
+            pa.description AS activityDescription,
+            pa.createdAt AS activityCreatedTime
+        FROM ProjectActivities pa
+        WHERE pa.project.project_id = :projectId
+        ORDER BY pa.createdAt DESC, pa.activityId DESC
+        LIMIT 5
+        """)
+    List<RecentActivitiesCard> getRecentActivities(
+            @Param("projectId") Integer projectId
+    );
+
 }

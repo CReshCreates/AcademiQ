@@ -37,33 +37,48 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             @Param("projectId") Integer projectId
     );
 
+
+    // ==========================================
+    // GET PROJECTS CREATED OR JOINED BY STUDENT
+    // ==========================================
+
     @Query("""
-    SELECT new com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse(
-        p.project_id,
-        p.title,
-        p.supervisor.fullName,
-        p.programmeSubject.semester.semesterName,
-        p.programmeSubject.subject.name,
-        p.programmeSubject.subject.subjectId,
-        CAST(COALESCE(ROUND(AVG(t.progress)), 0) AS INTEGER ),
-        p.status,
-        p.created_at
-    )
-    FROM Project p
-    JOIN p.projectMember pm
-    LEFT JOIN p.milestone m
-    LEFT JOIN m.tasks t
-    WHERE pm.user.userId = :userId
-    
-    GROUP BY
-        p.project_id,
-        p.title,
-        p.supervisor.fullName,
-        p.programmeSubject.semester.semesterName,
-        p.programmeSubject.subject.name,
-        p.status
-""")
-    List<CreatedProjectResponse> getMyProjects(@Param("userId") Integer userId);
+        SELECT new com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse(
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            CAST(COALESCE(ROUND(AVG(t.progress)), 0) AS INTEGER),
+            p.status,
+            p.created_at
+        )
+        FROM Project p
+        LEFT JOIN p.milestone m
+        LEFT JOIN m.tasks t
+        WHERE p.user.userId = :userId
+           OR EXISTS (
+               SELECT pm.memberId
+               FROM ProjectMember pm
+               WHERE pm.project = p
+                 AND pm.user.userId = :userId
+           )
+        GROUP BY
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            p.status,
+            p.created_at
+        ORDER BY p.created_at DESC, p.project_id DESC
+        """)
+    List<CreatedProjectResponse> getMyProjects(
+            @Param("userId") Integer userId
+    );
+
 
     @Query("""
     SELECT

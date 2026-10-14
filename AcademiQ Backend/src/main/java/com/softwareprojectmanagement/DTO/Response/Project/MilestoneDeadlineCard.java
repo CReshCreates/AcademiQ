@@ -1,10 +1,15 @@
+
 package com.softwareprojectmanagement.DTO.Response.Project;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public interface MilestoneDeadlineCard {
-    public String getMilestoneName();
-    public String getMilestoneDescription();
-    public LocalDateTime getMilestoneDeadline();
-    public Integer getProgressPercentage();
+
+    String getMilestoneName();
+
+    String getMilestoneDescription();
+
+    LocalDate getMilestoneDeadline();
+
+    Integer getProgressPercentage();
 }

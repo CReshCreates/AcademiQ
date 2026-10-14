@@ -32,6 +32,7 @@ public class ProjectService {
     private final FileStorageService fileStorageService;
     private final MilestoneRepository milestoneRepository;
     private final SubmissionRepository submissionRepository;
+    private final TaskRepository taskRepository;
 
     public List<AvailableSubjectsForProjectCreation> getSubjects(String email){
         User user = userRepository.findByEmail(email);
@@ -314,12 +315,55 @@ public class ProjectService {
         List<RecentActivitiesCard> recentActivities =
                 projectActivitiesRepository.getRecentActivities(projectId);
 
-        return new MyProjectsPageInfo(
+
+        // BUILD PROJECT OVERVIEW RESPONSE
+        MyProjectsPageInfo response = new MyProjectsPageInfo(
                 kpiCards,
                 teamMembers,
                 milestoneDeadlineCard,
                 feedbackCard,
                 recentActivities
         );
+
+        // Basic project information
+        response.setProjectId(project.getProject_id());
+        response.setProjectTitle(project.getTitle());
+        response.setProjectDescription(project.getDescription());
+        response.setProjectStatus(project.getStatus());
+        response.setCreatedAt(project.getCreated_at());
+
+
+        // CALCULATE OVERALL PROJECT PROGRESS
+        Double averageProgress =
+                taskRepository.getAverageTaskProgressByProjectId(
+                        projectId
+                );
+
+        int overallProgress = averageProgress == null
+                ? 0
+                : (int) Math.round(averageProgress);
+
+        // Keep the percentage within the valid range.
+        overallProgress = Math.max(
+                0,
+                Math.min(100, overallProgress)
+        );
+
+        response.setOverallProgress(overallProgress);
+
+
+        // Assigned supervisor information
+        if (project.getSupervisor() != null) {
+            response.setSupervisorId(
+                    project.getSupervisor().getUserId()
+            );
+
+            response.setSupervisorName(
+                    project.getSupervisor().getFullName()
+            );
+        }
+
+        return response;
+
     }
 }

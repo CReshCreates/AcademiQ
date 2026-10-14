@@ -15,7 +15,7 @@ import java.util.List;
 public interface MilestoneRepository
         extends JpaRepository<Milestone, Integer> {
 
-    //PROJECT OVERVIEW MILESTONE CARD
+    // GET NEXT INCOMPLETE PROJECT MILESTONE
     @Query("""
         SELECT
             m.title AS milestoneName,
@@ -24,11 +24,17 @@ public interface MilestoneRepository
             m.progress AS progressPercentage
         FROM Milestone m
         WHERE m.project.project_id = :projectId
+          AND m.status <> 'COMPLETED'
+        ORDER BY
+            CASE WHEN m.deadline IS NULL THEN 1 ELSE 0 END ASC,
+            m.deadline ASC,
+            m.milestoneId ASC
         LIMIT 1
         """)
     MilestoneDeadlineCard getMilestoneDeadline(
             @Param("projectId") Integer projectId
     );
+
 
     // GET ALL MILESTONES OF A PROJECT
     @Query("""
