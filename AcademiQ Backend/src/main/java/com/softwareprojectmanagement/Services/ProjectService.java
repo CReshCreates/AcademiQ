@@ -157,53 +157,53 @@ public class ProjectService {
         createdProjectMember.setJoinedAt(LocalDateTime.now());
         projectMemberRepository.save(createdProjectMember);
 
+        // MILESTONE 1: PROPOSAL & REQUIREMENTS
         Milestone projectProposal = new Milestone();
         projectProposal.setProject(createdProject);
-        projectProposal.setTitle("Project Proposal");
-        projectProposal.setDescription("Initial project proposal and supervisor approval.");
+        projectProposal.setTitle(
+                "Project Proposal & Requirements Collection"
+        );
+        projectProposal.setDescription(
+                "Project proposal, objectives, scope, feasibility "
+                        + "and software requirements collection."
+        );
         projectProposal.setStatus("PENDING");
         projectProposal.setProgress(0);
-        Milestone savedMilestone = milestoneRepository.save(projectProposal);
 
-        Milestone requirements = new Milestone();
-        requirements.setProject(createdProject);
-        requirements.setTitle("Requirements Analysis");
-        requirements.setDescription("Analysis and documentation of system requirements.");
-        requirements.setStatus("PENDING");
-        requirements.setProgress(0);
-        milestoneRepository.save(requirements);
+        Milestone savedMilestone =
+                milestoneRepository.save(projectProposal);
 
-        Milestone systemDesign = new Milestone();
-        systemDesign.setProject(createdProject);
-        systemDesign.setTitle("System Design");
-        systemDesign.setDescription("Design of the system architecture, database and user interface.");
-        systemDesign.setStatus("PENDING");
-        systemDesign.setProgress(0);
-        milestoneRepository.save(systemDesign);
 
-        Milestone implementation = new Milestone();
-        implementation.setProject(createdProject);
-        implementation.setTitle("Implementation");
-        implementation.setDescription("Development and implementation of the system.");
-        implementation.setStatus("PENDING");
-        implementation.setProgress(0);
-        milestoneRepository.save(implementation);
+        // MILESTONE 2: DESIGN & IMPLEMENTATION
+        Milestone designImplementation = new Milestone();
+        designImplementation.setProject(createdProject);
+        designImplementation.setTitle(
+                "System Design & Implementation"
+        );
+        designImplementation.setDescription(
+                "System architecture, UML diagrams, database design, "
+                        + "user interface design and core implementation."
+        );
+        designImplementation.setStatus("PENDING");
+        designImplementation.setProgress(0);
 
-        Milestone testing = new Milestone();
-        testing.setProject(createdProject);
-        testing.setTitle("Testing & QA");
-        testing.setDescription("Testing, debugging and quality assurance of the system.");
-        testing.setStatus("PENDING");
-        testing.setProgress(0);
-        milestoneRepository.save(testing);
+        milestoneRepository.save(designImplementation);
 
-        Milestone finalSubmission = new Milestone();
-        finalSubmission.setProject(createdProject);
-        finalSubmission.setTitle("Final Submission");
-        finalSubmission.setDescription("Final project submission and completion.");
-        finalSubmission.setStatus("PENDING");
-        finalSubmission.setProgress(0);
-        milestoneRepository.save(finalSubmission);
+        // MILESTONE 3: TESTING & DOCUMENTATION
+        Milestone testingDocumentation = new Milestone();
+        testingDocumentation.setProject(createdProject);
+        testingDocumentation.setTitle(
+                "Testing & Documentation"
+        );
+        testingDocumentation.setDescription(
+                "System testing, debugging, test reports, "
+                        + "final documentation and project submission."
+        );
+        testingDocumentation.setStatus("PENDING");
+        testingDocumentation.setProgress(0);
+
+        milestoneRepository.save(testingDocumentation);
+
 
         Submission submission = new Submission();
         submission.setProjectMember(createdProjectMember);

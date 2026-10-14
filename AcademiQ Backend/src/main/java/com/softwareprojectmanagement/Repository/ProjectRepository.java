@@ -116,4 +116,25 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             @Param("projectId") Integer projectId
     );
 
+
+    // ==========================================
+    // GET ALL PROJECTS ASSOCIATED WITH A STUDENT
+    // ==========================================
+
+    @Query("""
+        SELECT p
+        FROM Project p
+        WHERE p.user.userId = :userId
+           OR EXISTS (
+               SELECT pm.memberId
+               FROM ProjectMember pm
+               WHERE pm.project = p
+                 AND pm.user.userId = :userId
+           )
+        ORDER BY p.created_at DESC, p.project_id DESC
+        """)
+    List<Project> findAllProjectsForStudent(
+            @Param("userId") Integer userId
+    );
+
 }

@@ -1,6 +1,7 @@
 package com.softwareprojectmanagement.Conrollers;
 
 import com.softwareprojectmanagement.DTO.Response.ProjectMember.ProjectMemberInvitationSearchResponse;
+import com.softwareprojectmanagement.DTO.Response.Team.ProjectTeamResponse;
 import com.softwareprojectmanagement.Services.ProjectMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,4 +21,12 @@ public class ProjectMemberController {
         return ResponseEntity.status(HttpStatus.OK).body(projectMemberService.searchResults(query,  projectId));
     }
 
+    @GetMapping("/my-project-teams")
+    public ResponseEntity<List<ProjectTeamResponse>> getMyProjectTeams() {
+
+        List<ProjectTeamResponse> teams =
+                projectMemberService.getMyProjectTeams();
+
+        return ResponseEntity.ok(teams);
+    }
 }
