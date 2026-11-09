@@ -1,0 +1,380 @@
+
+/* ==========================================
+   ACADEMIQ — LIGHT WORKSPACE SELECTOR
+   ========================================== */
+
+.workspace-select-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  background: #f8f9fc;
+  color: #252440;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+}
+
+/* ==========================================
+   HEADER
+   ========================================== */
+
+.workspace-select-header {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 28px 5%;
+}
+
+.workspace-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: #252440;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+}
+
+.workspace-brand-mark {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #818cf8, #7c3aed);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ==========================================
+   MAIN CONTENT AND CENTER ALIGNMENT
+   ========================================== */
+
+.workspace-select-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 36px 24px 70px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}
+
+.workspace-select-title {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  color: #252440;
+  font-size: clamp(32px, 4vw, 50px);
+  line-height: 1.2;
+  letter-spacing: -1.6px;
+  font-weight: 600;
+
+  text-align: center;
+}
+
+.workspace-select-subtitle {
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 0;
+
+  color: #85849a;
+  font-size: 16px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ==========================================
+   NETFLIX-STYLE WORKSPACE PROFILES
+   ========================================== */
+
+.workspace-profile-grid {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+
+  width: 100%;
+  gap: 28px;
+  margin: 52px auto 0;
+}
+
+.workspace-profile {
+  width: 165px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.workspace-profile-avatar {
+  position: relative;
+  width: 160px;
+  height: 160px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 3px solid transparent;
+  border-radius: 12px;
+  overflow: hidden;
+
+  box-shadow: 0 7px 20px rgba(42, 37, 93, 0.09);
+
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.workspace-profile-initials {
+  color: #ffffff;
+  font-size: 55px;
+  font-weight: 700;
+  letter-spacing: -3px;
+  user-select: none;
+}
+
+.workspace-profile:hover .workspace-profile-avatar,
+.workspace-profile:focus-visible .workspace-profile-avatar {
+  transform: translateY(-5px) scale(1.035);
+  border-color: #6366f1;
+  box-shadow: 0 14px 30px rgba(99, 102, 241, 0.18);
+}
+
+.workspace-profile:focus-visible {
+  outline: none;
+}
+
+.workspace-profile-name {
+  width: 100%;
+  margin-top: 17px;
+
+  color: #575670;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+
+  text-align: center;
+  overflow-wrap: anywhere;
+  transition: color 180ms ease;
+}
+
+.workspace-profile:hover .workspace-profile-name,
+.workspace-profile:focus-visible .workspace-profile-name {
+  color: #4f46e5;
+}
+
+.workspace-profile-role {
+  margin-top: 8px;
+  color: #9897aa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.workspace-profile:disabled {
+  cursor: wait;
+}
+
+.workspace-profile:disabled:not(:hover) {
+  opacity: 0.65;
+}
+
+.workspace-profile-loading {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(31, 27, 58, 0.65);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ==========================================
+   LOGOUT BUTTON — LIGHT PILL DESIGN
+   ========================================== */
+
+.workspace-select-logout {
+  margin-top: 58px;
+  padding: 12px 28px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  border: 1px solid #e4e4ee;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #62617e;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: none;
+
+  box-shadow: 0 3px 10px rgba(35, 31, 75, 0.04);
+  cursor: pointer;
+
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.workspace-select-logout::before {
+  content: "↪";
+  font-size: 19px;
+  line-height: 0.8;
+  transform: rotate(180deg);
+}
+
+.workspace-select-logout:hover {
+  background: #f0efff;
+  color: #4f46e5;
+  border-color: #c7c4ff;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 18px rgba(99, 102, 241, 0.09);
+}
+
+.workspace-select-logout:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.3);
+  outline-offset: 3px;
+}
+
+/* ==========================================
+   LOADING / ERROR / EMPTY STATES
+   ========================================== */
+
+.workspace-select-message {
+  margin-top: 38px;
+  color: #77768d;
+  text-align: center;
+}
+
+.workspace-select-error {
+  width: min(100%, 520px);
+  margin-top: 25px;
+  padding: 14px 20px;
+
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 10px;
+
+  color: #be123c;
+  font-size: 14px;
+  text-align: center;
+}
+
+.workspace-select-empty {
+  margin-top: 42px;
+  color: #33324f;
+  text-align: center;
+  line-height: 1.7;
+}
+
+.workspace-select-empty span {
+  color: #818096;
+  font-size: 14px;
+}
+
+/* ==========================================
+   FOOTER
+   ========================================== */
+
+.workspace-select-footer {
+  flex-shrink: 0;
+  padding: 18px 24px 24px;
+  text-align: center;
+
+  color: #aaa9bb;
+  font-size: 11px;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+
+/* ==========================================
+   MOBILE RESPONSIVENESS
+   ========================================== */
+
+@media (max-width: 640px) {
+  .workspace-select-header {
+    padding: 22px 24px;
+  }
+
+  .workspace-brand {
+    font-size: 20px;
+  }
+
+  .workspace-select-content {
+    padding: 40px 20px 65px;
+  }
+
+  .workspace-select-title {
+    font-size: clamp(29px, 7vw, 38px);
+    letter-spacing: -0.8px;
+  }
+
+  .workspace-select-subtitle {
+    font-size: 14px;
+  }
+
+  .workspace-profile-grid {
+    gap: 26px 16px;
+    margin-top: 40px;
+  }
+
+  .workspace-profile {
+    width: 130px;
+  }
+
+  .workspace-profile-avatar {
+    width: 124px;
+    height: 124px;
+  }
+
+  .workspace-profile-initials {
+    font-size: 43px;
+  }
+
+  .workspace-profile-name {
+    font-size: 13px;
+  }
+
+  .workspace-select-logout {
+    margin-top: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-profile-avatar,
+  .workspace-profile-name,
+  .workspace-select-logout {
+    transition: none;
+  }
+}

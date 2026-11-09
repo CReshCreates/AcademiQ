@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -15,7 +17,7 @@ import java.time.LocalDate;
 @Table(name="tasks")
 public class Task {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer taskId;
 
     @NotNull
@@ -44,14 +46,16 @@ public class Task {
 
     @NotNull
     @Column(name="created_at")
-    private LocalDate createdAt;
-
+    private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "project_id")
-    private Project project;
+    @JoinColumn(name = "milestone_id", nullable = false)
+    private Milestone milestone;
 
     @ManyToOne
     @JoinColumn(name="member_id")
     private ProjectMember projectMember;
+
+    @OneToMany(mappedBy = "task")
+    private List<Subtask> subtasks;
 }

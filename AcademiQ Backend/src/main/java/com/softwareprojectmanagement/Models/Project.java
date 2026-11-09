@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 public class Project {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer project_id;
 
     @NotNull
@@ -34,12 +34,6 @@ public class Project {
     @NotNull
     @Column(name="created_at")
     private LocalDateTime created_at;
-
-    @OneToMany(mappedBy = "project")
-    private List<Task> tasks;
-
-    @OneToMany(mappedBy="project")
-    private List<Proposal> proposals;
 
     @OneToMany(mappedBy = "project")
     private List<ProjectMember> projectMember;
@@ -66,5 +60,20 @@ public class Project {
 
     @ManyToOne
     @JoinColumn(name="supervisor_id")
-    private SubjectSupervisor subjectSupervisor;
+    private User supervisor;
+
+
+    // ==========================================
+    // WORKSPACE THAT OWNS THIS PROJECT
+    // ==========================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "workspace_id",
+            foreignKey = @ForeignKey(
+                    name = "fk_project_workspace"
+            )
+    )
+    private Workspace workspace;
+
 }

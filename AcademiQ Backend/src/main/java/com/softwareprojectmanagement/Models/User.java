@@ -67,4 +67,13 @@ public class User {
     @ManyToOne
     @JoinColumn(name="programme_id")
     private Programme programme;
+
+    @OneToMany(mappedBy="invitedBy")
+    private List<Invitation> sentInvitation;
+
+    @OneToMany(mappedBy="invitedUser")
+    private List<Invitation> receivedInvitation;
+
+    @OneToMany(mappedBy = "assignedTo")
+    private List<Subtask> assignedSubtasks;
 }
