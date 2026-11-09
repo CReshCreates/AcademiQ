@@ -1,12 +1,12 @@
 
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Request.Subtask.SubtaskCreateRequest;
 import com.softwareprojectmanagement.DTO.Request.Subtask.SubtaskUpdateRequest;
 import com.softwareprojectmanagement.DTO.Request.Subtask.SubtaskStatusUpdateRequest;
 import com.softwareprojectmanagement.DTO.Response.Subtask.SubtaskResponse;
-import com.softwareprojectmanagement.Services.SubtaskService;
 
+import com.softwareprojectmanagement.Services.SubtaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

@@ -7,6 +7,7 @@ import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionQueueResp
 import com.softwareprojectmanagement.Exceptions.NoSubmissionException;
 import com.softwareprojectmanagement.Models.*;
 import com.softwareprojectmanagement.Repository.*;
+import com.softwareprojectmanagement.Services.Workspace.AcademicWorkspaceAccessService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +35,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SubmissionService {
     private final UserRepository userRepository;
+    private final AcademicWorkspaceAccessService workspaceAccessService;
     private final SubmissionRepository submissionRepository;
     private final CommentRepository commentRepository;
     private final ProjectActivitiesRepository projectActivitiesRepository;
@@ -140,6 +142,8 @@ public class SubmissionService {
         }
 
         Project project = milestone.getProject();
+        WorkspaceMembership.WorkspaceRole workspaceRole =
+                workspaceAccessService.requireMembership(project, currentUser);
 
         // ==========================================
         // AUTHORIZE SUBMISSION PDF ACCESS
@@ -148,21 +152,21 @@ public class SubmissionService {
         Integer currentUserId = currentUser.getUserId();
 
         boolean isProjectCreator =
-                "STUDENT".equalsIgnoreCase(currentUser.getRole())
+                workspaceRole == WorkspaceMembership.WorkspaceRole.STUDENT
                         && project.getUser() != null
                         && currentUserId.equals(
                         project.getUser().getUserId()
                 );
 
         boolean isAssignedSupervisor =
-                "SUPERVISOR".equalsIgnoreCase(currentUser.getRole())
+                workspaceRole == WorkspaceMembership.WorkspaceRole.SUPERVISOR
                         && project.getSupervisor() != null
                         && currentUserId.equals(
                         project.getSupervisor().getUserId()
                 );
 
         boolean isProjectMember =
-                "STUDENT".equalsIgnoreCase(currentUser.getRole())
+                workspaceRole == WorkspaceMembership.WorkspaceRole.STUDENT
                         && projectMemberRepository
                         .findMembersByProjectId(
                                 project.getProject_id()
@@ -290,6 +294,8 @@ public class SubmissionService {
         }
 
         Project project = milestone.getProject();
+        workspaceAccessService.requireRole(project, currentUser,
+                WorkspaceMembership.WorkspaceRole.SUPERVISOR);
 
         // Only the assigned supervisor can review.
         User assignedSupervisor = project.getSupervisor();
@@ -550,6 +556,9 @@ public class SubmissionService {
                         )
                 );
 
+        workspaceAccessService.requireRole(project, currentUser,
+                WorkspaceMembership.WorkspaceRole.STUDENT);
+
         // ======================================
         // STEP 4: VERIFY PROJECT MEMBERSHIP
         // ======================================
@@ -738,27 +747,30 @@ public class SubmissionService {
                         )
                 );
 
+        WorkspaceMembership.WorkspaceRole workspaceRole =
+                workspaceAccessService.requireMembership(project, currentUser);
+
         Integer currentUserId = currentUser.getUserId();
 
         // STEP 3: Verify project authorization.
 
         boolean isCreator =
-                project.getUser() != null
+                workspaceRole == WorkspaceMembership.WorkspaceRole.STUDENT
+                        &&                 project.getUser() != null
                         && currentUserId.equals(
                         project.getUser().getUserId()
                 );
 
         boolean isAssignedSupervisor =
-                "SUPERVISOR".equalsIgnoreCase(
-                        currentUser.getRole()
-                )
+                workspaceRole == WorkspaceMembership.WorkspaceRole.SUPERVISOR
                         && project.getSupervisor() != null
                         && currentUserId.equals(
                         project.getSupervisor().getUserId()
                 );
 
         boolean isProjectMember =
-                projectMemberRepository
+                workspaceRole == WorkspaceMembership.WorkspaceRole.STUDENT
+                        &&                 projectMemberRepository
                         .findMembersByProjectId(projectId)
                         .stream()
                         .anyMatch(member ->

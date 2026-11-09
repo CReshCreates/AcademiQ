@@ -11,12 +11,14 @@ import com.softwareprojectmanagement.Models.InvitationStatus;
 import com.softwareprojectmanagement.Models.Project;
 import com.softwareprojectmanagement.Models.ProjectMember;
 import com.softwareprojectmanagement.Models.User;
+import com.softwareprojectmanagement.Models.WorkspaceMembership;
 
 import com.softwareprojectmanagement.Repository.InvitationRepository;
 import com.softwareprojectmanagement.Repository.ProjectMemberRepository;
 import com.softwareprojectmanagement.Repository.ProjectRepository;
 import com.softwareprojectmanagement.Repository.UserRepository;
 
+import com.softwareprojectmanagement.Services.Workspace.AcademicWorkspaceAccessService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -36,6 +38,7 @@ public class ProjectMemberService {
     private static final int MAX_PROJECT_MEMBERS = 3;
 
     private final UserRepository userRepository;
+    private final AcademicWorkspaceAccessService workspaceAccessService;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final InvitationRepository invitationRepository;
@@ -103,6 +106,9 @@ public class ProjectMemberService {
                                         + projectId
                         )
                 );
+
+        workspaceAccessService.requireRole(project, currentUser,
+                WorkspaceMembership.WorkspaceRole.STUDENT);
 
         // Only the project leader can search for
         // students to invite to this project.
@@ -178,6 +184,15 @@ public class ProjectMemberService {
                 );
 
         return projects.stream()
+                .filter(project -> {
+                    try {
+                        workspaceAccessService.requireRole(project, currentUser,
+                                WorkspaceMembership.WorkspaceRole.STUDENT);
+                        return true;
+                    } catch (AccessDeniedException denied) {
+                        return false;
+                    }
+                })
                 .map(project ->
                         mapToProjectTeamResponse(
                                 project,

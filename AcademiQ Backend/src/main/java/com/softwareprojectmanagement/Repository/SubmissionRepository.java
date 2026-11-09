@@ -31,6 +31,16 @@ public interface SubmissionRepository extends JpaRepository<Submission, Integer>
         JOIN s.projectMember pm
         WHERE p.supervisor.userId = :userId
           AND s.status = 'PENDING'
+          AND p.workspace.workspaceType = com.softwareprojectmanagement.Models.Workspace.WorkspaceType.ACADEMIC
+          AND p.workspace.status = com.softwareprojectmanagement.Models.Workspace.WorkspaceStatus.ACTIVE
+          AND EXISTS (
+              SELECT wm.membershipId
+              FROM WorkspaceMembership wm
+              WHERE wm.user.userId = :userId
+                AND wm.workspace = p.workspace
+                AND wm.status = com.softwareprojectmanagement.Models.WorkspaceMembership.MembershipStatus.ACTIVE
+                AND wm.role = com.softwareprojectmanagement.Models.WorkspaceMembership.WorkspaceRole.SUPERVISOR
+          )
         ORDER BY s.submittedAt ASC, s.submissionId ASC
         """)
     List<SubmissionQueueResponse> findPendingProjectReviews(

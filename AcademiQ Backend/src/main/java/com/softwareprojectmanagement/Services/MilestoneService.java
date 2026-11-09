@@ -5,14 +5,15 @@ import com.softwareprojectmanagement.DTO.Response.Milestone.MilestoneResponse;
 
 import com.softwareprojectmanagement.Models.Milestone;
 import com.softwareprojectmanagement.Models.Project;
-import com.softwareprojectmanagement.Models.ProjectMember;
 import com.softwareprojectmanagement.Models.User;
+import com.softwareprojectmanagement.Models.WorkspaceMembership;
 
 import com.softwareprojectmanagement.Repository.MilestoneRepository;
 import com.softwareprojectmanagement.Repository.ProjectMemberRepository;
 import com.softwareprojectmanagement.Repository.ProjectRepository;
 import com.softwareprojectmanagement.Repository.UserRepository;
 
+import com.softwareprojectmanagement.Services.Workspace.AcademicWorkspaceAccessService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,7 @@ public class MilestoneService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
+    private final AcademicWorkspaceAccessService workspaceAccessService;
 
     // GET ALL MILESTONES FOR A PROJECT
     @Transactional(readOnly = true)
@@ -108,28 +110,32 @@ public class MilestoneService {
             User currentUser
     ) {
 
+        WorkspaceMembership.WorkspaceRole role =
+                workspaceAccessService.requireMembership(project, currentUser);
+
         Integer currentUserId = currentUser.getUserId();
 
         // Project creator can view milestones.
         boolean isProjectCreator =
-                project.getUser() != null
+                role == WorkspaceMembership.WorkspaceRole.STUDENT
+                        && project.getUser() != null
                         && currentUserId.equals(
                         project.getUser().getUserId()
                 );
 
         // Assigned supervisor can view milestones.
         boolean isAssignedSupervisor =
-                project.getSupervisor() != null
+                role == WorkspaceMembership.WorkspaceRole.SUPERVISOR
+                        && project.getSupervisor() != null
                         && currentUserId.equals(
                         project.getSupervisor().getUserId()
                 )
-                        && "SUPERVISOR".equalsIgnoreCase(
-                        currentUser.getRole()
-                );
+                ;
 
         // Accepted project members can view milestones.
         boolean isProjectMember =
-                projectMemberRepository
+                role == WorkspaceMembership.WorkspaceRole.STUDENT
+                        && projectMemberRepository
                         .findMembersByProjectId(
                                 project.getProject_id()
                         )

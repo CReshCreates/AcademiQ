@@ -1,5 +1,5 @@
 
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Request.Task.TaskCreateRequest;
 import com.softwareprojectmanagement.DTO.Request.Task.TaskUpdateRequest;

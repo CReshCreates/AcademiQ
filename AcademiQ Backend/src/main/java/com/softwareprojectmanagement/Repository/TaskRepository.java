@@ -75,6 +75,25 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
     );
 
 
+    // ==========================================
+    // GET ASSIGNED TASKS WITHIN ONE WORKSPACE
+    // ==========================================
+
+    @Query("""
+        SELECT t
+        FROM Task t
+        JOIN t.projectMember pm
+        JOIN pm.user u
+        WHERE u.userId = :userId
+          AND t.milestone.project.workspace.workspaceId = :workspaceId
+        ORDER BY t.deadline ASC, t.taskId ASC
+        """)
+    List<Task> findAllTasksAssignedToUserInWorkspace(
+            @Param("userId") Integer userId,
+            @Param("workspaceId") Integer workspaceId
+    );
+
+
     // GET AVERAGE TASK PROGRESS FOR A PROJECT
     @Query("""
         SELECT AVG(t.progress)

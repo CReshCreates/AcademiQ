@@ -4,15 +4,20 @@ package com.softwareprojectmanagement.Config;
 import com.softwareprojectmanagement.Models.Project;
 import com.softwareprojectmanagement.Models.User;
 
+import com.softwareprojectmanagement.Models.Workspace;
+import com.softwareprojectmanagement.Models.WorkspaceMembership;
 import com.softwareprojectmanagement.Repository.ProjectMemberRepository;
 import com.softwareprojectmanagement.Repository.ProjectRepository;
 import com.softwareprojectmanagement.Repository.UserRepository;
 
+import com.softwareprojectmanagement.Repository.WorkspaceMembershipRepository;
 import com.softwareprojectmanagement.Services.JwtService;
 import com.softwareprojectmanagement.Services.MyUserDetailsService;
 
+import com.softwareprojectmanagement.Services.ProjectChatAuthorizationService;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -29,6 +34,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class WebSocketAuthInterceptor
         implements ChannelInterceptor {
 
@@ -44,39 +50,43 @@ public class WebSocketAuthInterceptor
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final WorkspaceMembershipRepository workspaceMembershipRepository;
+    private final ProjectChatAuthorizationService projectChatAuthorizationService;
 
     // INTERCEPT INCOMING STOMP FRAMES
     @Override
-    public Message<?> preSend(
-            Message<?> message,
-            MessageChannel channel
-    ) {
-
+    public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor =
-                StompHeaderAccessor.wrap(message);
-
-        StompCommand command = accessor.getCommand();
-
-        if (StompCommand.CONNECT.equals(command)) {
-
-            authenticateConnection(accessor);
-
-        } else if (StompCommand.SUBSCRIBE.equals(command)) {
-
-            authorizeDestination(
-                    accessor,
-                    SUBSCRIBE_PREFIX
-            );
-
-        } else if (StompCommand.SEND.equals(command)) {
-
-            authorizeDestination(
-                    accessor,
-                    SEND_PREFIX
-            );
+                org.springframework.messaging.support.MessageHeaderAccessor
+                        .getAccessor(message, StompHeaderAccessor.class);
+        if (accessor == null) {
+            return message;
         }
 
-        return message;
+        StompCommand command = accessor.getCommand();
+        if (command != StompCommand.CONNECT
+                && command != StompCommand.SUBSCRIBE
+                && command != StompCommand.SEND) {
+            return message;
+        }
+
+        String destination = accessor.getDestination();
+        log.info("CHAT DEBUG received command={} destination={}", command, destination);
+        try {
+            if (command == StompCommand.CONNECT) {
+                authenticateConnection(accessor);
+            } else if (command == StompCommand.SUBSCRIBE) {
+                authorizeDestination(accessor, SUBSCRIBE_PREFIX);
+            } else {
+                authorizeDestination(accessor, SEND_PREFIX);
+            }
+            log.info("CHAT DEBUG accepted command={} destination={}", command, destination);
+            return message;
+        } catch (Exception exception) {
+            log.error("CHAT DEBUG rejected command={} destination={} reason={}",
+                    command, destination, exception.getMessage(), exception);
+            throw exception;
+        }
     }
 
     // AUTHENTICATE STOMP CONNECT
@@ -174,7 +184,7 @@ public class WebSocketAuthInterceptor
             );
         }
 
-        validateProjectAccess(projectId, currentUser);
+        projectChatAuthorizationService.validateProjectAccess(projectId, currentUser);
     }
 
     // IDENTIFY AUTHENTICATED STOMP SESSION USER
@@ -203,7 +213,8 @@ public class WebSocketAuthInterceptor
         return currentUser;
     }
 
-    // CHECK PROJECT CHAT MEMBERSHIP
+
+    // CHECK PROJECT CHAT ACCESS USING WORKSPACE MEMBERSHIP
     private void validateProjectAccess(
             Integer projectId,
             User currentUser
@@ -217,34 +228,74 @@ public class WebSocketAuthInterceptor
                         )
                 );
 
+        // 1. Validate the project's workspace.
+        Workspace workspace = project.getWorkspace();
+
+        if (workspace == null
+                || workspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || workspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+
+            throw new AccessDeniedException(
+                    "Project chat is unavailable for this workspace."
+            );
+        }
+
         Integer userId = currentUser.getUserId();
 
+        // 2. Retrieve active workspace memberships.
+        java.util.List<WorkspaceMembership> memberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        userId,
+                        WorkspaceMembership.MembershipStatus.ACTIVE
+                );
+
+        // 3. Require an active membership in this project's workspace.
+        WorkspaceMembership membership = memberships.stream()
+                .filter(item ->
+                        item.getWorkspace().getWorkspaceId()
+                                .equals(workspace.getWorkspaceId())
+                )
+                .findFirst()
+                .orElseThrow(() ->
+                        new AccessDeniedException(
+                                "Active workspace membership is required."
+                        )
+                );
+
+        WorkspaceMembership.WorkspaceRole role =
+                membership.getRole();
+
+        // 4. Check project-level permissions.
         boolean isCreator =
-                "STUDENT".equalsIgnoreCase(currentUser.getRole())
+                role == WorkspaceMembership.WorkspaceRole.STUDENT
                         && project.getUser() != null
                         && userId.equals(
                         project.getUser().getUserId()
                 );
 
         boolean isSupervisor =
-                "SUPERVISOR".equalsIgnoreCase(currentUser.getRole())
+                role == WorkspaceMembership.WorkspaceRole.SUPERVISOR
                         && project.getSupervisor() != null
                         && userId.equals(
                         project.getSupervisor().getUserId()
                 );
 
         boolean isMember =
-                "STUDENT".equalsIgnoreCase(currentUser.getRole())
+                role == WorkspaceMembership.WorkspaceRole.STUDENT
                         && projectMemberRepository
                         .findMembersByProjectId(projectId)
                         .stream()
                         .anyMatch(member ->
                                 member.getUser() != null
                                         && userId.equals(
-                                        member.getUser().getUserId()
+                                        member.getUser()
+                                                .getUserId()
                                 )
                         );
 
+        // 5. Deny access unless both workspace and project-level authorization are satisfied.
         if (!isCreator && !isSupervisor && !isMember) {
 
             throw new AccessDeniedException(
@@ -252,4 +303,5 @@ public class WebSocketAuthInterceptor
             );
         }
     }
+
 }

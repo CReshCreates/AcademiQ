@@ -11,6 +11,7 @@ import com.softwareprojectmanagement.Exceptions.ProjectMembersCountExceededExcep
 import com.softwareprojectmanagement.Models.*;
 import com.softwareprojectmanagement.Repository.*;
 
+import com.softwareprojectmanagement.Services.Workspace.AcademicWorkspaceAccessService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +32,7 @@ public class InvitationService {
 
     private final InvitationRepository invitationRepository;
     private final UserRepository userRepository;
+    private final AcademicWorkspaceAccessService workspaceAccessService;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final NotificationRepository notificationRepository;
@@ -61,6 +63,9 @@ public class InvitationService {
                         )
                 );
 
+
+        workspaceAccessService.requireRole(project, invitedBy,
+                WorkspaceMembership.WorkspaceRole.STUDENT);
 
         // Only students can send project invitations.
         if (!"STUDENT".equals(invitedBy.getRole())) {
@@ -94,6 +99,9 @@ public class InvitationService {
                     "Only students can be invited to a project."
             );
         }
+
+        workspaceAccessService.requireRole(project, invitedUser,
+                WorkspaceMembership.WorkspaceRole.STUDENT);
 
         // Verify the student's academic profile.
         if (invitedUser.getProgramme() == null
@@ -383,6 +391,9 @@ public class InvitationService {
                     "Invitation does not belong to this project."
             );
         }
+
+        workspaceAccessService.requireRole(project, user,
+                WorkspaceMembership.WorkspaceRole.STUDENT);
 
         // STEP 4: Check invitation status.
         if (invitation.getStatus() != InvitationStatus.PENDING) {

@@ -1,4 +1,4 @@
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Response.ProjectMember.ProjectMemberInvitationSearchResponse;
 import com.softwareprojectmanagement.DTO.Response.Team.ProjectTeamResponse;

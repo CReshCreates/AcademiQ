@@ -1,9 +1,9 @@
 
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Response.Milestone.MilestoneResponse;
-import com.softwareprojectmanagement.Services.MilestoneService;
 
+import com.softwareprojectmanagement.Services.MilestoneService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;

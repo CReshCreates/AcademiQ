@@ -9,6 +9,7 @@ import com.softwareprojectmanagement.DTO.Response.Subtask.SubtaskResponse;
 import com.softwareprojectmanagement.Models.*;
 import com.softwareprojectmanagement.Repository.*;
 
+import com.softwareprojectmanagement.Services.Workspace.AcademicWorkspaceAccessService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -27,6 +28,7 @@ public class SubtaskService {
     private final SubtaskRepository subtaskRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final AcademicWorkspaceAccessService workspaceAccessService;
 
 
     // ==========================================
@@ -101,6 +103,9 @@ public class SubtaskService {
         Project project =
                 task.getMilestone().getProject();
 
+        workspaceAccessService.requireRole(project, currentUser,
+                WorkspaceMembership.WorkspaceRole.STUDENT);
+
         boolean isProjectMember =
                 project.getProjectMember() != null
                         && project.getProjectMember()
@@ -165,6 +170,9 @@ public class SubtaskService {
         // is a member of the parent project.
         Project project =
                 task.getMilestone().getProject();
+
+        workspaceAccessService.requireRole(project, currentUser,
+                WorkspaceMembership.WorkspaceRole.STUDENT);
 
         boolean isProjectMember =
                 project.getProjectMember() != null

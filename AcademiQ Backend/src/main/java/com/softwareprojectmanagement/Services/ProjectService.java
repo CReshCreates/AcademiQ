@@ -33,6 +33,7 @@ public class ProjectService {
     private final MilestoneRepository milestoneRepository;
     private final SubmissionRepository submissionRepository;
     private final TaskRepository taskRepository;
+    private final WorkspaceMembershipRepository workspaceMembershipRepository;
 
     public List<AvailableSubjectsForProjectCreation> getSubjects(String email){
         User user = userRepository.findByEmail(email);
@@ -97,6 +98,61 @@ public class ProjectService {
             );
         }
 
+
+        // Resolve the academic workspace from the student's
+        // existing programme and batch assignments.
+
+        Workspace programmeWorkspace =
+                user.getProgramme().getWorkspace();
+
+        Workspace batchWorkspace =
+                user.getSection().getBatch().getWorkspace();
+
+        if (programmeWorkspace == null || batchWorkspace == null) {
+            throw new IllegalStateException(
+                    "Student programme or batch is not assigned to a workspace."
+            );
+        }
+
+        if (!programmeWorkspace.getWorkspaceId()
+                .equals(batchWorkspace.getWorkspaceId())) {
+            throw new IllegalStateException(
+                    "Student programme and batch belong to different workspaces."
+            );
+        }
+
+        Workspace academicWorkspace = programmeWorkspace;
+
+        if (academicWorkspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || academicWorkspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+            throw new AccessDeniedException(
+                    "The academic workspace is not active."
+            );
+        }
+
+        List<WorkspaceMembership> activeMemberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        user.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
+                );
+
+        boolean hasStudentMembership = activeMemberships.stream()
+                .anyMatch(membership ->
+                        membership.getWorkspace().getWorkspaceId()
+                                .equals(academicWorkspace.getWorkspaceId())
+                                && membership.getRole()
+                                == WorkspaceMembership.WorkspaceRole.STUDENT
+                );
+
+        if (!hasStudentMembership) {
+            throw new AccessDeniedException(
+                    "You do not have an active student membership in this academic workspace."
+            );
+        }
+
+
         List<AvailableSubjectsForProjectCreation> eligibleSubjects =
                 getSubjects(user.getEmail());
 
@@ -148,6 +204,7 @@ public class ProjectService {
         createdProject.setUser(user);
         createdProject.setProgrammeSubject(programmeSubject);
         createdProject.setSupervisor(subjectSupervisor.getUser());
+        createdProject.setWorkspace(academicWorkspace);
         createdProject.setCreated_at(LocalDateTime.now());
         projectRepository.save(createdProject);
 
@@ -228,18 +285,98 @@ public class ProjectService {
     }
 
 
-    public List<CreatedProjectResponse> getMyProjects(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        User user = userRepository.findByEmail(authentication.getName());
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<CreatedProjectResponse> getMyProjects() {
 
-        if(user == null){
-            throw new UsernameNotFoundException("User not found");
+        // Identify the authenticated user.
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException(
+                    "Authentication is required."
+            );
         }
 
-        return projectRepository.getMyProjects(user.getUserId());
+        User user = userRepository.findByEmail(
+                authentication.getName()
+        );
 
+        if (user == null) {
+            throw new UsernameNotFoundException(
+                    "Authenticated user not found."
+            );
+        }
+
+        // This endpoint currently serves the academic Student Portal.
+        if (user.getProgramme() == null
+                || user.getSection() == null
+                || user.getSection().getBatch() == null) {
+            throw new AccessDeniedException(
+                    "Student academic profile is incomplete."
+            );
+        }
+
+        Workspace programmeWorkspace =
+                user.getProgramme().getWorkspace();
+
+        Workspace batchWorkspace =
+                user.getSection().getBatch().getWorkspace();
+
+        if (programmeWorkspace == null || batchWorkspace == null) {
+            throw new AccessDeniedException(
+                    "Student programme or batch has no workspace."
+            );
+        }
+
+        if (!programmeWorkspace.getWorkspaceId()
+                .equals(batchWorkspace.getWorkspaceId())) {
+            throw new AccessDeniedException(
+                    "Student programme and batch belong to different workspaces."
+            );
+        }
+
+        Workspace academicWorkspace = programmeWorkspace;
+
+        if (academicWorkspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || academicWorkspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+            throw new AccessDeniedException(
+                    "The academic workspace is not active."
+            );
+        }
+
+        // Authorize using workspace-specific membership, not the user's global role.
+        List<WorkspaceMembership> activeMemberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        user.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
+                );
+
+        boolean hasStudentMembership = activeMemberships.stream()
+                .anyMatch(membership ->
+                        membership.getWorkspace().getWorkspaceId()
+                                .equals(academicWorkspace.getWorkspaceId())
+                                && membership.getRole()
+                                == WorkspaceMembership.WorkspaceRole.STUDENT
+                );
+
+        if (!hasStudentMembership) {
+            throw new AccessDeniedException(
+                    "You do not have an active student membership in this workspace."
+            );
+        }
+
+        // Return only projects from the authorized workspace.
+        return projectRepository.getMyProjectsInWorkspace(
+                user.getUserId(),
+                academicWorkspace.getWorkspaceId()
+        );
     }
+
 
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -275,29 +412,81 @@ public class ProjectService {
                         )
                 );
 
-        // 3. Check project membership.
-        boolean isMember = project.getProjectMember()
-                .stream()
-                .anyMatch(member ->
-                        member.getUser().getUserId()
-                                .equals(user.getUserId())
+
+        // 3. Verify that the project belongs to an active academic workspace.
+
+        Workspace projectWorkspace = project.getWorkspace();
+
+        if (projectWorkspace == null) {
+            throw new AccessDeniedException(
+                    "This project is not assigned to a workspace."
+            );
+        }
+
+        if (projectWorkspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || projectWorkspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+            throw new AccessDeniedException(
+                    "The project's academic workspace is not active."
+            );
+        }
+
+        // 4. Retrieve the user's active workspace memberships.
+
+        List<WorkspaceMembership> activeMemberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        user.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
                 );
 
-        // 4. Check whether the user is the assigned supervisor.
+        WorkspaceMembership projectMembership =
+                activeMemberships.stream()
+                        .filter(membership ->
+                                membership.getWorkspace()
+                                        .getWorkspaceId()
+                                        .equals(projectWorkspace.getWorkspaceId())
+                        )
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new AccessDeniedException(
+                                        "You are not an active member of this project's workspace."
+                                )
+                        );
+
+        // 5. Determine permissions from the workspace role, not the user's global role.
+
+        WorkspaceMembership.WorkspaceRole workspaceRole =
+                projectMembership.getRole();
+
+        boolean isAdmin =
+                workspaceRole == WorkspaceMembership.WorkspaceRole.ADMIN;
+
         boolean isSupervisor =
-                "SUPERVISOR".equals(user.getRole())
+                workspaceRole == WorkspaceMembership.WorkspaceRole.SUPERVISOR
                         && project.getSupervisor() != null
-                        && project.getSupervisor().getUserId()
+                        && project.getSupervisor()
+                        .getUserId()
                         .equals(user.getUserId());
 
-        // 5. Administrators have platform-wide access.
-        boolean isAdmin = "ADMIN".equals(user.getRole());
+        boolean isStudentMember =
+                workspaceRole == WorkspaceMembership.WorkspaceRole.STUDENT
+                        && project.getProjectMember()
+                        .stream()
+                        .anyMatch(member ->
+                                member.getUser()
+                                        .getUserId()
+                                        .equals(user.getUserId())
+                        );
 
-        if (!isMember && !isSupervisor && !isAdmin) {
+        // 6. Allow only authorized members of this workspace.
+
+        if (!isAdmin && !isSupervisor && !isStudentMember) {
             throw new AccessDeniedException(
                     "You are not authorized to access this project."
             );
         }
+
 
         // 6. Retrieve dashboard information after authorization.
         ProjectKPICards kpiCards =

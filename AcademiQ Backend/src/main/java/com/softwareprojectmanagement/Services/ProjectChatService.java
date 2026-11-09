@@ -4,14 +4,9 @@ package com.softwareprojectmanagement.Services;
 import com.softwareprojectmanagement.DTO.Request.Chat.ChatMessageRequest;
 import com.softwareprojectmanagement.DTO.Response.Chat.ChatMessageResponse;
 
-import com.softwareprojectmanagement.Models.Message;
-import com.softwareprojectmanagement.Models.Project;
-import com.softwareprojectmanagement.Models.User;
+import com.softwareprojectmanagement.Models.*;
 
-import com.softwareprojectmanagement.Repository.MessageRepository;
-import com.softwareprojectmanagement.Repository.ProjectMemberRepository;
-import com.softwareprojectmanagement.Repository.ProjectRepository;
-import com.softwareprojectmanagement.Repository.UserRepository;
+import com.softwareprojectmanagement.Repository.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +34,7 @@ public class ProjectChatService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
+    private final WorkspaceMembershipRepository workspaceMembershipRepository;
 
     // SAVE A PROJECT CHAT MESSAGE
     @Transactional
@@ -48,7 +44,7 @@ public class ProjectChatService {
             Principal principal
     ) {
 
-        User currentUser = getAuthenticatedUser();
+        User currentUser = getAuthenticatedUser(principal);
 
         Project project = getAuthorizedProject(
                 projectId,
@@ -136,7 +132,8 @@ public class ProjectChatService {
         return currentUser;
     }
 
-    // VERIFY PROJECT CHAT ACCESS
+
+    // VERIFY PROJECT CHAT ACCESS WITH WORKSPACE MEMBERSHIP
     private Project getAuthorizedProject(
             Integer projectId,
             User currentUser
@@ -151,37 +148,66 @@ public class ProjectChatService {
                         )
                 );
 
+        Workspace workspace = project.getWorkspace();
+
+        if (workspace == null
+                || workspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || workspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+
+            throw new AccessDeniedException(
+                    "Project chat is unavailable for this workspace."
+            );
+        }
+
         Integer userId = currentUser.getUserId();
 
-        boolean isProjectCreator =
-                "STUDENT".equalsIgnoreCase(
-                        currentUser.getRole()
+        List<WorkspaceMembership> memberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        userId,
+                        WorkspaceMembership.MembershipStatus.ACTIVE
+                );
+
+        WorkspaceMembership membership = memberships.stream()
+                .filter(item ->
+                        item.getWorkspace().getWorkspaceId()
+                                .equals(workspace.getWorkspaceId())
                 )
+                .findFirst()
+                .orElseThrow(() ->
+                        new AccessDeniedException(
+                                "Active workspace membership is required."
+                        )
+                );
+
+        WorkspaceMembership.WorkspaceRole role =
+                membership.getRole();
+
+        boolean isProjectCreator =
+                role == WorkspaceMembership.WorkspaceRole.STUDENT
                         && project.getUser() != null
                         && userId.equals(
                         project.getUser().getUserId()
                 );
 
         boolean isAssignedSupervisor =
-                "SUPERVISOR".equalsIgnoreCase(
-                        currentUser.getRole()
-                )
+                role == WorkspaceMembership.WorkspaceRole.SUPERVISOR
                         && project.getSupervisor() != null
                         && userId.equals(
                         project.getSupervisor().getUserId()
                 );
 
         boolean isProjectMember =
-                "STUDENT".equalsIgnoreCase(
-                        currentUser.getRole()
-                )
+                role == WorkspaceMembership.WorkspaceRole.STUDENT
                         && projectMemberRepository
                         .findMembersByProjectId(projectId)
                         .stream()
                         .anyMatch(member ->
                                 member.getUser() != null
                                         && userId.equals(
-                                        member.getUser().getUserId()
+                                        member.getUser()
+                                                .getUserId()
                                 )
                         );
 
@@ -190,14 +216,14 @@ public class ProjectChatService {
                 && !isProjectMember) {
 
             throw new AccessDeniedException(
-                    "You are not authorized to access "
-                            + "this project chat."
+                    "You are not authorized to access this project chat."
             );
         }
 
         return project;
     }
-    
+
+
     // GET AUTHENTICATED WEBSOCKET USER
     private User getAuthenticatedUser(
             Principal principal

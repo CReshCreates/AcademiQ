@@ -79,6 +79,48 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             @Param("userId") Integer userId
     );
 
+    // GET STUDENT PROJECTS WITHIN ONE WORKSPACE
+
+    @Query("""
+        SELECT new com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse(
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            CAST(COALESCE(ROUND(AVG(t.progress)), 0) AS INTEGER),
+            p.status,
+            p.created_at
+        )
+        FROM Project p
+        LEFT JOIN p.milestone m
+        LEFT JOIN m.tasks t
+        WHERE p.workspace.workspaceId = :workspaceId
+          AND (
+              p.user.userId = :userId
+              OR EXISTS (
+                  SELECT pm.memberId
+                  FROM ProjectMember pm
+                  WHERE pm.project = p
+                    AND pm.user.userId = :userId
+              )
+          )
+        GROUP BY
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            p.status,
+            p.created_at
+        ORDER BY p.created_at DESC, p.project_id DESC
+        """)
+    List<CreatedProjectResponse> getMyProjectsInWorkspace(
+            @Param("userId") Integer userId,
+            @Param("workspaceId") Integer workspaceId
+    );
 
     @Query("""
     SELECT

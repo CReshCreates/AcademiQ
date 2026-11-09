@@ -1,3 +1,4 @@
+
 package com.softwareprojectmanagement.Models;
 
 import jakarta.persistence.*;
@@ -12,27 +13,45 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name="programmes")
+@Table(name = "programmes")
 public class Programme {
+
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    @Column(name="programme_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "programme_id")
     private int programmeId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="code")
+    @Column(name = "code")
     private String code;
 
-    @Column(name="duration_years")
+    @Column(name = "duration_years")
     private Integer durationYears;
 
-    @Column(name="status")
+    @Column(name = "status")
     private String status;
 
-    @Column(name="created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // ==========================================
+    // WORKSPACE THAT OWNS THIS PROGRAMME
+    // ==========================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "workspace_id",
+            foreignKey = @ForeignKey(
+                    name = "fk_programme_workspace"
+            )
+    )
+    private Workspace workspace;
+
+    // ==========================================
+    // EXISTING RELATIONSHIPS
+    // ==========================================
 
     @OneToMany(mappedBy = "programme")
     private List<ProgrammeSubject> programmeSubjects;

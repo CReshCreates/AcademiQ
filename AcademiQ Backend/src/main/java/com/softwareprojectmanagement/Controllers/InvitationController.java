@@ -1,4 +1,4 @@
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Request.Invitation.InvitationActionRequest;
 import com.softwareprojectmanagement.DTO.Request.Invitation.InvitationRequest;

@@ -31,6 +31,7 @@ public class TaskService {
     private final MilestoneRepository milestoneRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
+    private final WorkspaceMembershipRepository workspaceMembershipRepository;
 
     // CREATE PROJECT TASK
 
@@ -68,16 +69,55 @@ public class TaskService {
                         )
                 );
 
-        // STEP 3: Only the project leader can create tasks.
-        if (!"STUDENT".equals(currentUser.getRole())
-                || project.getUser() == null
-                || !project.getUser().getUserId()
-                .equals(currentUser.getUserId())) {
 
+        // STEP 3: Validate the project's academic workspace.
+        Workspace workspace = project.getWorkspace();
+
+        if (workspace == null
+                || workspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || workspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+
+            throw new AccessDeniedException(
+                    "The project's academic workspace is not active."
+            );
+        }
+
+        // Require an active STUDENT membership in the workspace that owns this project.
+        List<WorkspaceMembership> activeMemberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        currentUser.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
+                );
+
+        boolean isWorkspaceStudent = activeMemberships.stream()
+                .anyMatch(membership ->
+                        membership.getWorkspace().getWorkspaceId()
+                                .equals(workspace.getWorkspaceId())
+                                && membership.getRole()
+                                == WorkspaceMembership.WorkspaceRole.STUDENT
+                );
+
+        if (!isWorkspaceStudent) {
+            throw new AccessDeniedException(
+                    "Active student membership in this workspace is required."
+            );
+        }
+
+        // Only the creator of this project can create tasks.
+        boolean isProjectLeader =
+                project.getUser() != null
+                        && currentUser.getUserId().equals(
+                        project.getUser().getUserId()
+                );
+
+        if (!isProjectLeader) {
             throw new AccessDeniedException(
                     "Only the project leader can create tasks."
             );
         }
+
 
         // STEP 4: Check project workflow status.
         if (!Set.of("APPROVED", "IN_PROGRESS")
@@ -223,31 +263,69 @@ public class TaskService {
                         )
                 );
 
-        // STEP 3: Check whether the user is a project member.
-        boolean isMember = project.getProjectMember()
-                .stream()
-                .anyMatch(member ->
-                        member.getUser().getUserId()
-                                .equals(currentUser.getUserId())
+
+        // STEP 3: Validate the project's workspace.
+        Workspace workspace = project.getWorkspace();
+
+        if (workspace == null
+                || workspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || workspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+
+            throw new AccessDeniedException(
+                    "The project's academic workspace is not active."
+            );
+        }
+
+        // STEP 4: Require active membership in this workspace.
+        List<WorkspaceMembership> memberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        currentUser.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
                 );
 
-        // STEP 4: Check whether the user is the assigned supervisor.
+        WorkspaceMembership membership = memberships.stream()
+                .filter(item ->
+                        item.getWorkspace().getWorkspaceId()
+                                .equals(workspace.getWorkspaceId())
+                )
+                .findFirst()
+                .orElseThrow(() ->
+                        new AccessDeniedException(
+                                "Active workspace membership is required."
+                        )
+                );
+
+        // STEP 5: Determine permissions from the workspace role.
+        WorkspaceMembership.WorkspaceRole role =
+                membership.getRole();
+
+        boolean isAdmin =
+                role == WorkspaceMembership.WorkspaceRole.ADMIN;
+
         boolean isSupervisor =
-                "SUPERVISOR".equals(currentUser.getRole())
+                role == WorkspaceMembership.WorkspaceRole.SUPERVISOR
                         && project.getSupervisor() != null
                         && project.getSupervisor().getUserId()
                         .equals(currentUser.getUserId());
 
-        // STEP 5: Check administrator permission.
-        boolean isAdmin =
-                "ADMIN".equals(currentUser.getRole());
+        boolean isStudentMember =
+                role == WorkspaceMembership.WorkspaceRole.STUDENT
+                        && project.getProjectMember()
+                        .stream()
+                        .anyMatch(member ->
+                                member.getUser().getUserId()
+                                        .equals(currentUser.getUserId())
+                        );
 
-        // STEP 6: Reject unauthorized users.
-        if (!isMember && !isSupervisor && !isAdmin) {
+        // STEP 6: Reject users without project access.
+        if (!isAdmin && !isSupervisor && !isStudentMember) {
             throw new AccessDeniedException(
                     "You are not authorized to view tasks for this project."
             );
         }
+
 
         // STEP 7: Retrieve tasks belonging to this project.
         List<Task> tasks =
@@ -339,18 +417,55 @@ public class TaskService {
                         )
                 );
 
-        // STEP 3: Only the project leader can edit task details.
-        boolean isLeader =
-                "STUDENT".equals(currentUser.getRole())
-                        && project.getUser() != null
-                        && project.getUser().getUserId()
-                        .equals(currentUser.getUserId());
 
-        if (!isLeader) {
+        // STEP 3: Validate the project's academic workspace.
+        Workspace workspace = project.getWorkspace();
+
+        if (workspace == null
+                || workspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || workspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+
+            throw new AccessDeniedException(
+                    "The project's academic workspace is not active."
+            );
+        }
+
+        // Require an active STUDENT membership in the workspace that owns this project.
+        List<WorkspaceMembership> activeMemberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        currentUser.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
+                );
+
+        boolean isWorkspaceStudent = activeMemberships.stream()
+                .anyMatch(membership ->
+                        membership.getWorkspace().getWorkspaceId()
+                                .equals(workspace.getWorkspaceId())
+                                && membership.getRole()
+                                == WorkspaceMembership.WorkspaceRole.STUDENT
+                );
+
+        if (!isWorkspaceStudent) {
+            throw new AccessDeniedException(
+                    "Active student membership in this workspace is required."
+            );
+        }
+
+        // Only the project leader may update task details.
+        boolean isProjectLeader =
+                project.getUser() != null
+                        && currentUser.getUserId().equals(
+                        project.getUser().getUserId()
+                );
+
+        if (!isProjectLeader) {
             throw new AccessDeniedException(
                     "Only the project leader can update task details."
             );
         }
+
 
         // STEP 4: Retrieve the task.
         Task task = taskRepository.findById(taskId)
@@ -492,8 +607,9 @@ public class TaskService {
     }
 
 
+
     // ==========================================
-    // GET MY ASSIGNED TASKS ACROSS ALL PROJECTS
+    // GET MY ASSIGNED TASKS IN ACADEMIC WORKSPACE
     // ==========================================
 
     @Transactional
@@ -511,7 +627,6 @@ public class TaskService {
             );
         }
 
-        // STEP 2: Retrieve the current student.
         User currentUser = userRepository
                 .findByEmail(authentication.getName());
 
@@ -521,27 +636,90 @@ public class TaskService {
             );
         }
 
-        // STEP 3: Allow students only.
-        if (!"STUDENT".equalsIgnoreCase(
-                currentUser.getRole()
-        )) {
+        // STEP 2: Verify the academic profile.
+        if (currentUser.getProgramme() == null
+                || currentUser.getSection() == null
+                || currentUser.getSection().getBatch() == null) {
+
             throw new AccessDeniedException(
-                    "Only students can view their assigned tasks."
+                    "Student academic profile is incomplete."
             );
         }
 
-        // STEP 4: Retrieve tasks assigned to this user
-        // across all projects.
-        List<Task> tasks =
-                taskRepository.findAllTasksAssignedToUser(
-                        currentUser.getUserId()
+        // STEP 3: Resolve the student's academic workspace.
+        Workspace programmeWorkspace =
+                currentUser.getProgramme().getWorkspace();
+
+        Workspace batchWorkspace =
+                currentUser.getSection()
+                        .getBatch()
+                        .getWorkspace();
+
+        if (programmeWorkspace == null
+                || batchWorkspace == null) {
+
+            throw new AccessDeniedException(
+                    "Student programme or batch has no workspace."
+            );
+        }
+
+        if (!programmeWorkspace.getWorkspaceId()
+                .equals(batchWorkspace.getWorkspaceId())) {
+
+            throw new AccessDeniedException(
+                    "Student programme and batch belong to different workspaces."
+            );
+        }
+
+        Workspace academicWorkspace = programmeWorkspace;
+
+        // STEP 4: Verify the workspace is active and academic.
+        if (academicWorkspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || academicWorkspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+
+            throw new AccessDeniedException(
+                    "The academic workspace is not active."
+            );
+        }
+
+        // STEP 5: Require active STUDENT membership.
+        List<WorkspaceMembership> activeMemberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        currentUser.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
                 );
 
-        // STEP 5: Convert entities into response DTOs.
+        boolean isWorkspaceStudent = activeMemberships.stream()
+                .anyMatch(membership ->
+                        membership.getWorkspace()
+                                .getWorkspaceId()
+                                .equals(academicWorkspace.getWorkspaceId())
+                                && membership.getRole()
+                                == WorkspaceMembership.WorkspaceRole.STUDENT
+                );
+
+        if (!isWorkspaceStudent) {
+            throw new AccessDeniedException(
+                    "Active student membership in this workspace is required."
+            );
+        }
+
+        // STEP 6: Retrieve only assigned tasks
+        // belonging to the authorized workspace.
+        List<Task> tasks =
+                taskRepository.findAllTasksAssignedToUserInWorkspace(
+                        currentUser.getUserId(),
+                        academicWorkspace.getWorkspaceId()
+                );
+
+        // STEP 7: Convert entities into response DTOs.
         return tasks.stream()
                 .map(this::mapToMyTaskResponse)
                 .toList();
     }
+
 
 
     // ==========================================
@@ -638,19 +816,56 @@ public class TaskService {
                         )
                 );
 
-        // STEP 3: Only the project leader can delete tasks.
-        boolean isLeader =
-                "STUDENT".equals(currentUser.getRole())
-                        && project.getUser() != null
+
+        // STEP 3: Validate the project's academic workspace.
+        Workspace workspace = project.getWorkspace();
+
+        if (workspace == null
+                || workspace.getWorkspaceType()
+                != Workspace.WorkspaceType.ACADEMIC
+                || workspace.getStatus()
+                != Workspace.WorkspaceStatus.ACTIVE) {
+
+            throw new AccessDeniedException(
+                    "The project's academic workspace is not active."
+            );
+        }
+
+        // Require an active STUDENT membership
+        // in the workspace that owns this project.
+        List<WorkspaceMembership> activeMemberships =
+                workspaceMembershipRepository.findUserMembershipsByStatus(
+                        currentUser.getUserId(),
+                        WorkspaceMembership.MembershipStatus.ACTIVE
+                );
+
+        boolean isWorkspaceStudent = activeMemberships.stream()
+                .anyMatch(membership ->
+                        membership.getWorkspace().getWorkspaceId()
+                                .equals(workspace.getWorkspaceId())
+                                && membership.getRole()
+                                == WorkspaceMembership.WorkspaceRole.STUDENT
+                );
+
+        if (!isWorkspaceStudent) {
+            throw new AccessDeniedException(
+                    "Active student membership in this workspace is required."
+            );
+        }
+
+        // Only the project leader can delete tasks.
+        boolean isProjectLeader =
+                project.getUser() != null
                         && currentUser.getUserId().equals(
                         project.getUser().getUserId()
                 );
 
-        if (!isLeader) {
+        if (!isProjectLeader) {
             throw new AccessDeniedException(
                     "Only the project leader can delete tasks."
             );
         }
+
 
         // STEP 4: Find the requested task.
         Task task = taskRepository.findById(taskId)

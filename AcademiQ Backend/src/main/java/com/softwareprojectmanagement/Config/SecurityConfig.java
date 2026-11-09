@@ -31,7 +31,21 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth-> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/users/login", "/users/register").permitAll()
+
+                        .requestMatchers(
+                                "/users/login",
+                                "/users/register"
+                        ).permitAll()
+
+                        // Public account creation endpoints.
+                        // Registration services validate workspace
+                        // creation or possession of an invitation.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/workspaces/register",
+                                "/workspace-invitations/register"
+                        ).permitAll()
+
 
                         // Block direct access to uploaded files
                         .requestMatchers("/uploads", "/uploads/**").denyAll()

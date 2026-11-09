@@ -1,5 +1,5 @@
 
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.Models.Batch;
 import com.softwareprojectmanagement.Services.BatchService;

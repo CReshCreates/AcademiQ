@@ -1,4 +1,4 @@
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Request.Submission.SubmissionApprovalRequest;
 import com.softwareprojectmanagement.DTO.Response.Submission.SubmissionHistoryResponse;

@@ -1,5 +1,5 @@
 
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Request.Chat.ChatMessageRequest;
 import com.softwareprojectmanagement.DTO.Response.Chat.ChatMessageResponse;
