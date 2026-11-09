@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -54,4 +55,7 @@ public class Task {
     @ManyToOne
     @JoinColumn(name="member_id")
     private ProjectMember projectMember;
+
+    @OneToMany(mappedBy = "task")
+    private List<Subtask> subtasks;
 }

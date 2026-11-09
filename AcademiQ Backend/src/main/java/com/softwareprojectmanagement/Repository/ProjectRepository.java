@@ -1,12 +1,18 @@
 package com.softwareprojectmanagement.Repository;
 
 import com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse;
-import com.softwareprojectmanagement.Models.Programme;
+import com.softwareprojectmanagement.DTO.Response.Project.ProjectKPICards;
+import com.softwareprojectmanagement.DTO.Response.Project.TeamMembers;
 import com.softwareprojectmanagement.Models.Project;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
 
 
 @Repository
@@ -19,8 +25,10 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
         p.supervisor.fullName,
         p.programmeSubject.semester.semesterName,
         p.programmeSubject.subject.name,
+        p.programmeSubject.subject.subjectId,
         0,
-        'Proposal'
+        'Proposal',
+        p.created_at
     )
     FROM Project p
     WHERE p.project_id = :projectId
@@ -28,4 +36,162 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     CreatedProjectResponse getCreatedProject(
             @Param("projectId") Integer projectId
     );
+
+
+    // ==========================================
+    // GET PROJECTS CREATED OR JOINED BY STUDENT
+    // ==========================================
+
+    @Query("""
+        SELECT new com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse(
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            CAST(COALESCE(ROUND(AVG(t.progress)), 0) AS INTEGER),
+            p.status,
+            p.created_at
+        )
+        FROM Project p
+        LEFT JOIN p.milestone m
+        LEFT JOIN m.tasks t
+        WHERE p.user.userId = :userId
+           OR EXISTS (
+               SELECT pm.memberId
+               FROM ProjectMember pm
+               WHERE pm.project = p
+                 AND pm.user.userId = :userId
+           )
+        GROUP BY
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            p.status,
+            p.created_at
+        ORDER BY p.created_at DESC, p.project_id DESC
+        """)
+    List<CreatedProjectResponse> getMyProjects(
+            @Param("userId") Integer userId
+    );
+
+    // GET STUDENT PROJECTS WITHIN ONE WORKSPACE
+
+    @Query("""
+        SELECT new com.softwareprojectmanagement.DTO.Response.Project.CreatedProjectResponse(
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            CAST(COALESCE(ROUND(AVG(t.progress)), 0) AS INTEGER),
+            p.status,
+            p.created_at
+        )
+        FROM Project p
+        LEFT JOIN p.milestone m
+        LEFT JOIN m.tasks t
+        WHERE p.workspace.workspaceId = :workspaceId
+          AND (
+              p.user.userId = :userId
+              OR EXISTS (
+                  SELECT pm.memberId
+                  FROM ProjectMember pm
+                  WHERE pm.project = p
+                    AND pm.user.userId = :userId
+              )
+          )
+        GROUP BY
+            p.project_id,
+            p.title,
+            p.supervisor.fullName,
+            p.programmeSubject.semester.semesterName,
+            p.programmeSubject.subject.name,
+            p.programmeSubject.subject.subjectId,
+            p.status,
+            p.created_at
+        ORDER BY p.created_at DESC, p.project_id DESC
+        """)
+    List<CreatedProjectResponse> getMyProjectsInWorkspace(
+            @Param("userId") Integer userId,
+            @Param("workspaceId") Integer workspaceId
+    );
+
+    @Query("""
+    SELECT
+        (SELECT COUNT(t)
+         FROM Task t
+         WHERE t.milestone.project.project_id = :projectId) AS totalTasks,
+
+        (SELECT COUNT(t)
+         FROM Task t
+         WHERE t.milestone.project.project_id = :projectId
+         AND t.status = 'COMPLETED') AS completedTasks,
+
+        (SELECT COUNT(m)
+         FROM Milestone m
+         WHERE m.project.project_id = :projectId) AS totalMilestones,
+
+        (SELECT COUNT(m)
+         FROM Milestone m
+         WHERE m.project.project_id = :projectId
+         AND m.status = 'COMPLETED') AS completedMilestones
+""")
+    ProjectKPICards getProjectKPICards(@Param("projectId") Integer projectId);
+
+
+    @Query("""
+    SELECT
+        pm.user.fullName AS fullName,
+        pm.role AS role,
+        CAST(COUNT(t) AS integer) AS taskedAssignedNumber
+    FROM ProjectMember pm
+    LEFT JOIN pm.task t
+    WHERE pm.project.project_id = :projectId
+    GROUP BY
+        pm.memberId,
+        pm.user.fullName,
+        pm.role
+    """)
+    List<TeamMembers> getTeamMembers(
+            @Param("projectId") Integer projectId
+    );
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT p
+    FROM Project p
+    WHERE p.project_id = :projectId
+    """)
+    Optional<Project> findByIdForUpdate(
+            @Param("projectId") Integer projectId
+    );
+
+
+    // ==========================================
+    // GET ALL PROJECTS ASSOCIATED WITH A STUDENT
+    // ==========================================
+
+    @Query("""
+        SELECT p
+        FROM Project p
+        WHERE p.user.userId = :userId
+           OR EXISTS (
+               SELECT pm.memberId
+               FROM ProjectMember pm
+               WHERE pm.project = p
+                 AND pm.user.userId = :userId
+           )
+        ORDER BY p.created_at DESC, p.project_id DESC
+        """)
+    List<Project> findAllProjectsForStudent(
+            @Param("userId") Integer userId
+    );
+
 }

@@ -61,4 +61,19 @@ public class Project {
     @ManyToOne
     @JoinColumn(name="supervisor_id")
     private User supervisor;
+
+
+    // ==========================================
+    // WORKSPACE THAT OWNS THIS PROJECT
+    // ==========================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "workspace_id",
+            foreignKey = @ForeignKey(
+                    name = "fk_project_workspace"
+            )
+    )
+    private Workspace workspace;
+
 }

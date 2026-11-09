@@ -1,4 +1,4 @@
-package com.softwareprojectmanagement.Conrollers;
+package com.softwareprojectmanagement.Controllers;
 
 import com.softwareprojectmanagement.DTO.Request.Project.ProjectCreationRequest;
 import com.softwareprojectmanagement.DTO.Response.Project.*;
@@ -32,6 +32,16 @@ public class ProjectController {
     @PostMapping(value="students/createProject", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CreatedProjectResponse> createNewProject(@ModelAttribute ProjectCreationRequest projectCreationRequest){
         return ResponseEntity.status(HttpStatus.CREATED).body(projectService.getCreatedProject(projectCreationRequest));
+    }
+
+    @GetMapping("/students/getMyProjects")
+    public ResponseEntity<List<CreatedProjectResponse>> getMyProjects(){
+        return ResponseEntity.status(HttpStatus.OK).body(projectService.getMyProjects());
+    }
+
+    @GetMapping("/students/getProjectDetails/{projectId}")
+    public ResponseEntity<MyProjectsPageInfo> getProjectDetails(@PathVariable Integer projectId){
+        return ResponseEntity.status(HttpStatus.OK).body(projectService.getMyProjectsPageInfo(projectId));
     }
 
 }

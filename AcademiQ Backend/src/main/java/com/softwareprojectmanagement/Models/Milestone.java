@@ -40,6 +40,9 @@ public class Milestone {
     private Integer progress;
 
     @OneToMany(mappedBy = "milestone")
+    private List<Task> tasks;
+
+    @OneToMany(mappedBy = "milestone")
     private List<Submission> submission;
 
     @ManyToOne

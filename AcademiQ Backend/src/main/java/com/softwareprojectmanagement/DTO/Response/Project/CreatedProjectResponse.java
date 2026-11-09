@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,6 +15,8 @@ public class CreatedProjectResponse {
     private String supervisorName;
     private String semesterName;
     private String programmeSubjectName;
+    private Integer programmeSubjectId;
     private Integer progress;
     private String currentStage;
+    private LocalDateTime createdDate;
 }
